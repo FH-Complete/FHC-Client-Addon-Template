@@ -1,0 +1,28 @@
+{
+	"name": "fh-complete/client-addon",
+	"type": "app",
+	"description": "FH-Complete Client-Addon",
+	"keywords": [
+		"fhc",
+		"fh-complete",
+		"campusmanagement"
+	],
+	"homepage": "https://github.com/FH-Complete/FHC-Core",
+	"license": "GPLv3",
+	"authors": [
+		{
+			"name": "Bison Paolo",
+			"email": "bison@technikum-wien.at",
+			"homepage": "http://fhcomplete.org"
+		}
+	],
+	"support": {
+		"email": "info@fhcomplete.org",
+		"forum": "https://plus.google.com/communities/113278802529782592610",
+		"wiki": "http://wiki.fhcomplete.org/"
+	},
+    "require": {
+        "nategood/httpful": "^0.2.20",
+        "components/jquery": "^3.2"
+    }
+}
