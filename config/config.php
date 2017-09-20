@@ -12,35 +12,33 @@ $connection = array(
 	    HOST => 'debian.dev',
 	    PATH => 'core',
 	    ROUTER => 'index.ci.php',
-	    WEBSERVICES => 'api/v1'
+	    WS_PATH => 'api/v1'
 	)
 );
 
-$router = array(
-	LOGIN => array(
-		API => 'CheckUserAuth/CheckByUsernamePassword',
+$route = array(
+	LOCAL_LOGIN_CALL => array(
+		REMOTE_WS => 'CheckUserAuth/CheckByUsernamePassword',
 		HOOK => 'hookLogin',
 		USERNAME => 'username'
 	),
     'testHook' => array(
-        API => 'Test/Test',
+        REMOTE_WS => 'Test/Test',
         HOOK => 'hookTest',
-		LOGIN => false
+		LOGIN_REQUIRED => false
     ),
-	'testNoHook' => array(
-        API => 'Test/Test'
-    ),
+	'testNoHook' => 'Test/Test',
     'loadPersonData' => 'person/Person/Person',
 	'loadPhrases' => array(
-        API => 'system/Phrase/Phrases',
-		LOGIN => false
+        REMOTE_WS => 'system/Phrase/Phrases',
+		LOGIN_REQUIRED => false
     ),
     'loadKontaktByPersonID' => array(
-        API => 'person/Kontakt/KontaktByPersonID',
+        REMOTE_WS => 'person/Kontakt/KontaktByPersonID',
         HOOK => 'hookGetKontakt'
     ),
     'saveKontaktByPersonID' => array(
-        API => 'person/Kontakt/Kontakt',
+        REMOTE_WS => 'person/Kontakt/Kontakt',
         HOOK => 'hookSaveKontakt'
     )
 );

@@ -15,6 +15,9 @@ const RESPONSE = "response";
 const ROUTER_URL = "/ClientAddonTemplate/controller/router.php";
 const HTTP_GET_METHOD = "GET";
 const HTTP_POST_METHOD = "POST";
+const CACHE_ENABLED = "enabled";
+const CACHE_DISABLED = "disabled";
+const CACHE_OVERWRITE = "overwrite";
 
 /**
  *
@@ -88,7 +91,7 @@ function _callRESTFul(apiName, parameters, type, errorCallback, successCallback,
         var data = _cpObjProps(parameters);
 
         data.api = apiName;
-        data.cache = (cache === true) ? true : false;
+        data.cache = (cache != null && cache != '') ? cache : CACHE_DISABLED;
 
         $.ajax({
             url: ROUTER_URL,

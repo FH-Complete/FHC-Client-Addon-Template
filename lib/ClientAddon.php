@@ -5,46 +5,53 @@ require_once APPLICATION_PATH.'/lib/constants.php';
 require_once APPLICATION_PATH.'/lib/DataHandler.php';
 require_once APPLICATION_PATH.'/lib/CacheHandler.php';
 
+/**
+ * ClientAddon
+ */
 class ClientAddon
 {
-	//
-    const HOOK_DIR = 'hooks';
-    const CONFIG_DIR = 'config';
-    const CONFIG_FILENAME = 'config.php';
+    const HOOK_DIR = 'hooks'; // hooks directory name
+    const CONFIG_DIR = 'config'; // config directory name
+    const CONFIG_FILENAME = 'config.php'; // config file name
 
-	//
-    const URI_TEMPLATE = '%s://%s/%s/%s/%s/';
-    const HTTP_GET_METHOD = 'GET';
-    const HTTP_POST_METHOD = 'POST';
+    const HTTP_GET_METHOD = 'GET'; // http get method name
+    const HTTP_POST_METHOD = 'POST'; // http post method name
+	const URI_TEMPLATE = '%s://%s/%s/%s/%s/'; // URI format
 
-	const CACHE_PARAMETER = 'cache';
+	const CACHE_PARAMETER = 'cache'; // cache parameter name
+	const CACHE_ENABLED = 'enabled'; // cache enabled value
+	const CACHE_DISABLED = 'disabled'; // cache disabled value
+	const CACHE_OVERWRITE = 'overwrite'; // cache overwrite value
 
-	private $_router;			//
-	private $_connection;		//
+	private $_routeArray;		// contains the routing configuration array
+	private $_connectionArray;	// contains the connection parameters configuration array
 
-	private $_hook;				//
-	private $_apiCalled;		//
-	private $_loginRequired;	//
+	private $_remoteWSAlias;	// contains the called alias of the remote web service
 
-	private $_cache;			//
-	private $_apiName;			// REQUIRED
-	private $_httpMethod;		//
-	private $_callParameters;	//
+	private $_remoteWSName;		// contains the name of the remote web service to call
+	private $_hook;				// contains the name of the eventual hook to call
+	private $_loginRequired;	// true: the user must be logged to perform this call
+								// false: the user should not be logged to perform this call
 
-	private $_callResult;		//
+	private $_cache;				// contains the desired cache mode
+	private $_httpMethod;			// http method that was used to call this server
+									// it will be the same method that will be used to call the remote web service
+	private $_callParametersArray;	// contains the parameters to give to the remote web service
+
+	private $_callResult; // will contains the result of the called remote web service
 
     /**
-     *
+     * Object initialization, takes as parameters $_GET and $_POST
      */
-    public function __construct($get, $post)
+    public function __construct($httpGet, $httpPost)
     {
-		$this->_setPropertiesDefault(); //
+		$this->_setPropertiesDefault(); // properties initialization
 
-        $this->_loadConfig(); //
+        $this->_loadConfig(); // loads the configurations
 
-        $this->_setHTTPMethod($get, $post); //
+        $this->_setHTTPMethod($httpGet, $httpPost); // finds out what's the http method used to call this server
 
-        $this->_parseParameters($get, $post); //
+        $this->_parseParameters($httpGet, $httpPost); // parse and store parameters from $_GET and $_POST
     }
 
     // --------------------------------------------------------------------------------------------
@@ -74,46 +81,51 @@ class ClientAddon
 		{
 			$response = null;
 
-			if ($this->_cache === true)
+			// If the cache is enabled try to search in the cache
+			if ($this->_cache == CACHE_ENABLED)
 			{
-				$response = ClientAddon\CacheHandler::get($this->_apiName);
+				$response = ClientAddon\CacheHandler::get($this->_remoteWSName);
 			}
-			else
+			else // otherwise clean the cache for this call
 			{
-				ClientAddon\CacheHandler::unset($this->_apiName);
+				ClientAddon\CacheHandler::unset($this->_remoteWSName);
 			}
 
+			// If nothing was found in the cache then call the server
 			if ($response == null)
 			{
-		        $uri = $this->_generateURI();
+		        $uri = $this->_generateURI(); // URI of the remote web service
 
 		        try
 		        {
-		            if ($this->_isGET()) //
+		            if ($this->_isGET()) // if the call was performed using a HTTP GET
 		            {
 		                $response = $this->_callGET($uri);
 		            }
-		            else //
+		            else // if the call was performed using a HTTP POST
 		            {
 		                $response = $this->_callPOST($uri);
 		            }
 				}
-		        catch (\Httpful\Exception\ConnectionErrorException $cee)
+		        catch (\Httpful\Exception\ConnectionErrorException $cee) // connection error
 		        {
 					$this->_error(CONNECTION_ERROR);
 		        }
+				// otherwise another error has occurred, most likely the result of the remote web service is not json
+				// so a parse error is raised
 		        catch (Exception $e)
 		        {
 					$this->_error(JSON_PARSE_ERROR);
 		        }
 			}
 
-			if ($this->_cache === true)
+			// If the cache is enabled or should be overwritten, store the result
+			if ($this->_cache == CACHE_ENABLED || $this->_cache == CACHE_OVERWRITE)
 			{
-				ClientAddon\CacheHandler::set($this->_apiName, $response);
+				ClientAddon\CacheHandler::set($this->_remoteWSName, $response);
 			}
 
-            $this->_checkResponse($response);
+            $this->_checkResponse($response); // check t
 
 			$this->_setDataLogin();
 		}
@@ -124,13 +136,13 @@ class ClientAddon
 	 */
 	private function _setDataLogin()
 	{
-		if ($this->_apiCalled == LOGIN && $this->_callResult->{ClientAddon\DataHandler::CODE} == SUCCESS)
+		if ($this->_remoteWSAlias == LOCAL_LOGIN_CALL && $this->_callResult->{ClientAddon\DataHandler::CODE} == SUCCESS)
 		{
-			if (isset($this->_router[LOGIN])
-				&& isset($this->_router[LOGIN][USERNAME])
-				&& isset($this->_callParameters[USERNAME]))
+			if (isset($this->_routeArray[LOCAL_LOGIN_CALL])
+				&& isset($this->_routeArray[LOCAL_LOGIN_CALL][USERNAME])
+				&& isset($this->_callParametersArray[USERNAME]))
 			{
-				ClientAddon\DataHandler::set($this->_router[LOGIN][USERNAME], $this->_callParameters[USERNAME]);
+				ClientAddon\DataHandler::set($this->_routeArray[LOCAL_LOGIN_CALL][USERNAME], $this->_callParametersArray[USERNAME]);
 			}
 		}
 	}
@@ -140,58 +152,61 @@ class ClientAddon
 	 */
 	private function _getDataLogin()
 	{
-		if (isset($this->_router[LOGIN]) && isset($this->_router[LOGIN][USERNAME]))
+		if (isset($this->_routeArray[LOCAL_LOGIN_CALL]) && isset($this->_routeArray[LOCAL_LOGIN_CALL][USERNAME]))
 		{
-			return ClientAddon\DataHandler::get($this->_router[LOGIN][USERNAME]);
+			return ClientAddon\DataHandler::get($this->_routeArray[LOCAL_LOGIN_CALL][USERNAME]);
 		}
 	}
 
 	/**
-	 *
+	 * Set the header content type and print out in json format
 	 */
 	public function printResults()
 	{
 		header('Content-Type: application/json');
 
-		echo json_encode($this->_callResult);
+		echo json_encode($this->_callResult); // encode the result of the remote web service to json
 	}
 
     // --------------------------------------------------------------------------------------------
     // Private methods
 
 	/**
-     *
+     * initialization of the properties of this object
      */
 	private function _setPropertiesDefault()
 	{
-		$this->_router = null;
-		$this->_connection = null;
+		$this->_routeArray = null;
+		$this->_connectionArray = null;
 
+		$this->_remoteWSAlias = null;
+
+		$this->_remoteWSName = null;
 		$this->_hook = null;
-		$this->_apiCalled = null;
-		$this->_loginRequired = true;
+		$this->_loginRequired = true; // by default to perform a call the user must be logged in
 
-		$this->_cache = true;
-		$this->_apiName = null;
+		$this->_cache = CACHE_DISABLED; // by default caching is not enabled
 		$this->_httpMethod = null;
-		$this->_callParameters = array();
 
-		$this->_callResult = null;
+		$this->_callParametersArray = array();
+
+		// The default result of the remote web service is an error
+		$this->_callResult = ClientAddon\DataHandler::error(ADDON_ERROR);
 	}
 
     /**
-     *
+     * Loads the config file present in the config directory and sets the properties _routeArray and _connectionArray
      */
     private function _loadConfig()
     {
         require_once APPLICATION_PATH.'/'.ClientAddon::CONFIG_DIR.'/'.ClientAddon::CONFIG_FILENAME;
 
-		$this->_router = $router;
-		$this->_connection = $connection[$activeConnection];
+		$this->_routeArray = $route;
+		$this->_connectionArray = $connection[$activeConnection];
     }
 
     /**
-     *
+     * Finds out what's the http method used to call this server and set the properties _httpMethod
      */
     private function _setHTTPMethod($get, $post)
     {
@@ -208,53 +223,67 @@ class ClientAddon
     /**
      *
      */
-    private function _parseParameters($get, $post)
+    private function _parseParameters($httpGet, $httpPost)
     {
-        if ($this->_isGET()) //
+        if ($this->_isGET()) // if the call was performed using a HTTP GET
         {
-            $parameters = $get;
+            $httpParameters = $httpGet;
         }
-        else //
+        else // if the call was performed using a HTTP POST
         {
-            $parameters = $post;
+            $httpParameters = $httpPost;
         }
 
-        foreach ($parameters as $name => $value)
+        foreach ($httpParameters as $parameterName => $parameterValue)
         {
-            if ($name == API)
+			// If the parameter is the name of the remote web service
+            if ($parameterName == REMOTE_WS)
             {
-                if (array_key_exists($value, $this->_router))
+                if (array_key_exists($parameterValue, $this->_routeArray))
                 {
-					$this->_apiCalled = $value; //
+					$this->_remoteWSAlias = $parameterValue; // store the called alias of the remote web service
+					$routeConfigEntry = $this->_routeArray[$this->_remoteWSAlias]; // configuration entry for this web service
 
-                    if (is_array($this->_router[$value]))
+					// If $routeConfigEntry contains an array for this remote web service alias
+                    if (is_array($routeConfigEntry))
                     {
-                        if (isset($this->_router[$value][API]))
+						// If is set the name of the remote web service store it into property _remoteWSName
+                        if (isset($routeConfigEntry[REMOTE_WS]))
                         {
-                            $this->_apiName = $this->_router[$value][API];
+                            $this->_remoteWSName = $routeConfigEntry[REMOTE_WS];
                         }
-                        if (isset($this->_router[$value][HOOK]))
+						// If is set the name of the hook to be called later, store it into property _hook
+                        if (isset($routeConfigEntry[HOOK]))
                         {
-                            $this->_hook = $this->_router[$value][HOOK];
+                            $this->_hook = $routeConfigEntry[HOOK];
                         }
-						if (isset($this->_router[$value][LOGIN]))
+						// If is set that the login is required for this call, store it into property _loginRequired
+						if (isset($routeConfigEntry[LOGIN_REQUIRED]))
                         {
-                            $this->_loginRequired = $this->_router[$value][LOGIN];
+                            $this->_loginRequired = $routeConfigEntry[LOGIN_REQUIRED];
                         }
                     }
+					// Otherwise it contains only the name of the remote web service
                     else
                     {
-                        $this->_apiName = $this->_router[$value];
+                        $this->_remoteWSName = $routeConfigEntry;
                     }
                 }
             }
-            elseif ($name == ClientAddon::CACHE_PARAMETER)
+			// If the parameter is used to set the cache type
+            elseif ($parameterName == ClientAddon::CACHE_PARAMETER)
             {
-                $this->_cache = ($value === true || $value == 'true') ? true : false;
+				$this->_cache = CACHE_DISABLED; // By default caching is not enabled
+				// If it contains a valid value then set the property
+				if ($parameterValue == CACHE_ENABLED || $parameterValue == CACHE_DISABLED || $parameterValue == CACHE_OVERWRITE)
+				{
+					$this->_cache = $parameterValue;
+				}
             }
+			// Otherwise is a parameter to give to the remote web service
             else
             {
-                $this->_callParameters[$name] = $value;
+                $this->_callParametersArray[$parameterName] = $parameterValue;
             }
         }
     }
@@ -282,7 +311,7 @@ class ClientAddon
     {
 		$checkRequiredParameters = false;
 
-        if ($this->_apiName != '')
+        if ($this->_remoteWSName != '')
         {
 			$checkRequiredParameters = true;
         }
@@ -291,16 +320,16 @@ class ClientAddon
     }
 
 	/**
-	 *
+	 * _checkLogin - Checks if
 	 */
 	private function _checkLogin()
 	{
-		$checkLogin = false;
+		$checkLogin = false; // by
 
 		//
-		if ($this->_apiCalled == LOGIN)
+		if ($this->_remoteWSAlias == LOCAL_LOGIN_CALL)
 		{
-			$this->_cache = true; //
+			$this->_cache = CACHE_ENABLED; // store the result in the cache
 			$this->_loginRequired = false; //
 		}
 
@@ -320,24 +349,26 @@ class ClientAddon
 	}
 
     /**
-     *
+     * Generate the URI to call the remote web service
      */
     private function _generateURI()
     {
         $uri = sprintf(
             ClientAddon::URI_TEMPLATE,
-            $this->_connection[PROTOCOL],
-            $this->_connection[HOST],
-            $this->_connection[PATH],
-            $this->_connection[ROUTER],
-            $this->_connection[WEBSERVICES]
-        ).$this->_apiName;
+            $this->_connectionArray[PROTOCOL],
+            $this->_connectionArray[HOST],
+            $this->_connectionArray[PATH],
+            $this->_connectionArray[ROUTER],
+            $this->_connectionArray[WS_PATH]
+        ).$this->_remoteWSName;
 
-        if ($this->_isGET()) //
+		// If the call was performed using a HTTP GET then append the query string to the URI
+        if ($this->_isGET())
         {
 			$queryString = '';
 
-			foreach ($this->_callParameters as $name => $value)
+			// Create the query string
+			foreach ($this->_callParametersArray as $name => $value)
 			{
 				$queryString .= ($queryString == '' ? '?' : '&').$name.'='.$value;
 			}
@@ -354,8 +385,8 @@ class ClientAddon
     private function _callGET($uri)
     {
         return \Httpful\Request::get($uri)
-            ->authenticateWith($this->_connection[USERNAME], $this->_connection[PASSWORD])
-            ->addHeader($this->_connection[API_KEY_NAME], $this->_connection[API_KEY_VALUE])
+            ->authenticateWith($this->_connectionArray[USERNAME], $this->_connectionArray[PASSWORD])
+            ->addHeader($this->_connectionArray[API_KEY_NAME], $this->_connectionArray[API_KEY_VALUE])
             ->expectsJson()
             ->send();
     }
@@ -366,16 +397,16 @@ class ClientAddon
     private function _callPOST($uri)
     {
         return \Httpful\Request::post($uri)
-			->authenticateWith($this->_connection[USERNAME], $this->_connection[PASSWORD])
-			->addHeader($this->_connection[API_KEY_NAME], $this->_connection[API_KEY_VALUE])
+			->authenticateWith($this->_connectionArray[USERNAME], $this->_connectionArray[PASSWORD])
+			->addHeader($this->_connectionArray[API_KEY_NAME], $this->_connectionArray[API_KEY_VALUE])
             ->expectsJson()
-            ->body($this->_callParameters)
+            ->body($this->_callParametersArray)
             ->sendsJson()
             ->send();
     }
 
     /**
-     *
+     * Loads files that contain hooks from the hook directory
      */
     private function _loadHooks()
     {
@@ -473,7 +504,8 @@ class ClientAddon
 	}
 
 	/**
-	 *
+	 * Calls the hook (if it is valid) configurated in the route array for this call
+	 * and return the result of the call
 	 */
 	private function _callHook($code, $response = null)
 	{

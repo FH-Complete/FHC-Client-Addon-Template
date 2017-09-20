@@ -15,23 +15,21 @@ $connection = array(
 	    HOST => 'fhcomplete.org', //
 	    PATH => 'fhcomplete', //
 	    ROUTER => 'index.ci.php', //
-	    WEBSERVICES => 'api/v1' //
+	    WS_PATH => 'api/v1' //
 	)
 );
 
 //
-$router = array(
-	LOGIN => array(
-		API => 'CheckUserAuth/CheckByUsernamePassword',
+$route = array(
+	LOCAL_LOGIN_CALL => array(
+		REMOTE_WS => 'CheckUserAuth/CheckByUsernamePassword',
 		HOOK => 'hookLogin',
 		USERNAME => 'username'
 	),
     'testHook'  => array(	//
-        API => 'Test/Test', //
+        REMOTE_WS => 'Test/Test', //
         HOOK => 'hookTest', //
-		LOGIN => false		//
+		LOGIN_REQUIRED => false	//
     ),
-	'testNoHook'  => array(
-        API => 'Test/Test'
-    )
+	'testNoHook'  => 'Test/Test'
 );

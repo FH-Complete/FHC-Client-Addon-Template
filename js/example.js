@@ -29,7 +29,7 @@ function successCallback(response)
 $(document).ready(function() {
 
 	$("#loadKontaktByPersonID").click(function() {
-		callRESTFulGet('loadKontaktByPersonID', {person_id: 1}, errorCallback, successCallback, true);
+		callRESTFulGet('loadKontaktByPersonID', {person_id: 1}, errorCallback, successCallback, CACHE_ENABLED);
 	});
 
 	$("#saveKontaktByPersonID").click(function() {
