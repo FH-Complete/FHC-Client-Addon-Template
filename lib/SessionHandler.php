@@ -2,20 +2,23 @@
 
 namespace ClientAddon;
 
+/**
+ * Manages the user session
+ */
 class SessionHandler
 {
 	/**
-	 *
+	 * Start the session
 	 */
 	public static function start($sessionName = null)
 	{
-		//
+		// If the session is not present
 		if (session_status() != PHP_SESSION_ACTIVE)
 		{
 			session_start();
 		}
 
-		//
+		// If $sessionName is valid then initialize a session with this name
 		if ($sessionName != null || (is_string($sessionName) && trim($sessionName) != ''))
 		{
 			$_SESSION[$sessionName] = array();
@@ -23,7 +26,7 @@ class SessionHandler
 	}
 
 	/**
-	 *
+	 * Add a value into this session identified by the parameter name
 	 */
 	public static function set($sessionName, $name = null, $value = null)
 	{
@@ -36,7 +39,7 @@ class SessionHandler
 	}
 
 	/**
-	 *
+	 * Get a value from this session identified by the parameter name
 	 */
 	public static function get($sessionName, $name)
 	{
@@ -44,7 +47,7 @@ class SessionHandler
 	}
 
 	/**
-	 *
+	 * Remove a value from this session identified by the parameter name
 	 */
 	public static function unset($sessionName, $name)
 	{
@@ -55,7 +58,7 @@ class SessionHandler
 	}
 
 	/**
-	 *
+	 * Clean this session
 	 */
 	public static function flush($sessionName)
 	{

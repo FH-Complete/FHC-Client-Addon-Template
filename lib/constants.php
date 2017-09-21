@@ -1,10 +1,10 @@
 <?php
 
-define('FHC_CORE_SUCCESS',  0); //
+define('FHC_CORE_SUCCESS',  0); // success value from the core
 
-define('SUCCESS', 'OK'); //
+define('SUCCESS', 'OK'); // success code in the addon
 
-//
+// Blocking errors
 define('ADDON_ERROR',					'ERR0000');
 define('FHC_CORE_ERROR',				'ERR0001');
 define('CONNECTION_ERROR',  			'ERR0002');
@@ -14,11 +14,11 @@ define('INCOMPLETE_RESPONSE',   		'ERR0005');
 define('UNAUTHORIZED',          		'ERR0006');
 define('MISSING_REQUIRED_PARAMETERS',	'ERR0007');
 
-//
+// Non blocking errors (warnings)
 define('NO_DATA',               		'WAR0001');
 define('LOGIN_REQUIRED',				'WAR0002');
 
-//
+// Connection parameters names
 define('USERNAME',			'username');
 define('PASSWORD',			'password');
 define('API_KEY_NAME',		'api_key_name');
@@ -27,12 +27,12 @@ define('PROTOCOL',			'protocol');
 define('HOST',				'host');
 define('PATH',				'path');
 define('ROUTER',			'router');
-define('WS_PATH',			'web_services_path');
+define('WS_PATH',			'ws_path');
 
-//
-define('LOCAL_LOGIN_CALL',	'local_login_call');
+// Alias of the remote web service that manage the user login
+define('LOCAL_LOGIN_CALL',	'login');
 
-//
-define('REMOTE_WS',			'remote_web_service');
+// Route parameters names
+define('REMOTE_WS',			'remote_ws');
 define('HOOK',				'hook');
-define('LOGIN_REQUIRED',	'login_required');
+define('AUTH',				'auth');

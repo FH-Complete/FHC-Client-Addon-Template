@@ -1,7 +1,7 @@
 <?php
 
 /**
- *
+ * Hook example about what you can do
  */
 function hookTest($code, $response)
 {

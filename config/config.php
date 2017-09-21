@@ -25,13 +25,13 @@ $route = array(
     'testHook' => array(
         REMOTE_WS => 'Test/Test',
         HOOK => 'hookTest',
-		LOGIN_REQUIRED => false
+		AUTH => false
     ),
 	'testNoHook' => 'Test/Test',
     'loadPersonData' => 'person/Person/Person',
 	'loadPhrases' => array(
         REMOTE_WS => 'system/Phrase/Phrases',
-		LOGIN_REQUIRED => false
+		AUTH => false
     ),
     'loadKontaktByPersonID' => array(
         REMOTE_WS => 'person/Kontakt/KontaktByPersonID',

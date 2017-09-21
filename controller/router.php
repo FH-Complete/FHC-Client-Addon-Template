@@ -4,7 +4,7 @@ define('APPLICATION_PATH', dirname(__FILE__).'/../'); // define the application 
 
 require_once APPLICATION_PATH.'/lib/ClientAddon.php'; // includes the main components
 
-$clientAddon = new ClientAddon($_GET, $_POST); // instantiate a ClientAddon object
+$clientAddon = new ClientAddon(); // instantiate a ClientAddon object
 
 $clientAddon->call(); // takes care about the call perfomed on this page and calls the correct remote web service
 

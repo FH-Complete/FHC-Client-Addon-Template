@@ -4,12 +4,15 @@ namespace ClientAddon;
 
 require_once APPLICATION_PATH.'/lib/SessionHandler.php';
 
+/**
+ * Manages the cache
+ */
 class CacheHandler
 {
-	const SESSION_NAME = 'cache';
+	const SESSION_NAME = 'cache'; // name of the cache into the session
 
 	/**
-	 *
+	 * Initialize the cache
 	 */
 	public static function startSession()
 	{
@@ -19,7 +22,7 @@ class CacheHandler
 	}
 
 	/**
-	 *
+	 * Add a value into the cache identified by the parameter name
 	 */
 	public static function set($name, $value)
 	{
@@ -27,7 +30,7 @@ class CacheHandler
 	}
 
 	/**
-	 *
+	 * Get a value from the cache identified by the parameter name
 	 */
 	public static function get($name)
 	{
@@ -35,7 +38,7 @@ class CacheHandler
 	}
 
 	/**
-	 *
+	 * Remove a value from the cache identified by the parameter name
 	 */
 	public static function unset($name)
 	{
@@ -43,7 +46,7 @@ class CacheHandler
 	}
 
 	/**
-	 *
+	 * Clean all the cached data
 	 */
 	public static function flush()
 	{

@@ -9,34 +9,56 @@
  * @since	Version 1.0.0
  */
 
+const SUCCESS = "OK"; // success
+
+// Properties present in a response
 const CODE = "code";
-const SUCCESS = "OK";
 const RESPONSE = "response";
-const ROUTER_URL = "/ClientAddonTemplate/controller/router.php";
+
+// HTTP method parameters
 const HTTP_GET_METHOD = "GET";
 const HTTP_POST_METHOD = "POST";
+
+// Chache modes
 const CACHE_ENABLED = "enabled";
 const CACHE_DISABLED = "disabled";
 const CACHE_OVERWRITE = "overwrite";
 
+// Name of the login call
+const LOCAL_LOGIN_CALL = "login";
+
+// Parameters for the php layer
+const CACHE = "cache";
+const REMOTE_WS = "remote_ws";
+
 /**
- *
+ * Generate the router URI using the connection parameters
+ */
+function _generateRouterURI()
+{
+	return PROTOCOL + "://" + HOST + "/" + PROJECT + "/" + PATH + "/" + ROUTER;
+}
+
+/**
+ * Function to call if the ajax call has succeeded
  */
 function _onSuccess(response, textStatus, jqXHR)
 {
+	// call the success callback saved in _successCallback property
 	this._successCallback(response);
 }
 
 /**
- *
+ * Function to call if the ajax call has raised an error
  */
 function _onError(jqXHR, textStatus, errorThrown)
 {
+	 // call the error callback saved in _errorCallback property
     this._errorCallback(jqXHR, textStatus, errorThrown);
 }
 
 /**
- *
+ * Instaciate a new object and copy in it the properties from the parameter
  */
 function _cpObjProps(obj)
 {
@@ -51,27 +73,29 @@ function _cpObjProps(obj)
 }
 
 /**
- *
+ * Checks call parameters, if they are present and are valid
+ * NOTE: console.error is used here because those are not messages for the final user,
+ * 		 but for the web interface developer
  */
-function _checkParameters(apiName, parameters, errorCallback, successCallback)
+function _checkParameters(remoteWSAlias, parameters, errorCallback, successCallback)
 {
-    var valid = true;
+    var valid = true; // by default they are ok, we trust you!
 
-    //
-    if (typeof apiName != "string" || apiName == "")
+    // remoteWSAlias must be a non empty string
+    if (typeof remoteWSAlias != "string" || remoteWSAlias == "")
     {
         console.error("Invalid API name");
         valid = false;
     }
 
-    //
+    // parameters must be an object, not null of course
     if (typeof parameters != "object" && parameters != null)
     {
 		console.error("Invalid parameters, must be an object");
         valid = false;
     }
 
-    //
+    // errorCallback and successCallback must be a function
     if (typeof errorCallback != "function" || typeof successCallback != "function")
     {
         console.error("Invalid callbacks, they must be functions");
@@ -82,48 +106,56 @@ function _checkParameters(apiName, parameters, errorCallback, successCallback)
 }
 
 /**
- *
+ * Performs a call to the server were the PHP layer is running
+ * - remoteWSAlias: alias of the core web service to call
+ * - parameters: parameters to give to the core web service
+ * - type: POST or GET HTTP method
+ * - errorCallback: function to call after an error has been raised
+ * - successCallback: function to call after succeeded
+ * - cache: desired cache mode (optional)
  */
-function _callRESTFul(apiName, parameters, type, errorCallback, successCallback, cache)
+function _callRESTFul(remoteWSAlias, parameters, type, errorCallback, successCallback, cache)
 {
-    if (_checkParameters(apiName, parameters, errorCallback, successCallback))
+	// Checks the given parameters if they are present and are valid
+    if (_checkParameters(remoteWSAlias, parameters, errorCallback, successCallback))
     {
-        var data = _cpObjProps(parameters);
+        var data = _cpObjProps(parameters); // copy the properties of parameters into a new object
 
-        data.api = apiName;
-        data.cache = (cache != null && cache != '') ? cache : CACHE_DISABLED;
+        data[REMOTE_WS] = remoteWSAlias; // remote web service alias
+        data[CACHE] = (cache != null && cache != '') ? cache : CACHE_DISABLED; // cache mode
 
+		// ajax call
         $.ajax({
-            url: ROUTER_URL,
+            url: _generateRouterURI(),
             type: type,
-            dataType: "json",
+            dataType: "json", // always json!
             data: data,
-			_errorCallback: errorCallback,
-            _successCallback: successCallback,
-            success: _onSuccess,
-            error: _onError
+			_errorCallback: errorCallback, // save as property the callback error
+            _successCallback: successCallback, // save as property the callback success
+            success: _onSuccess, // function to call if succeeded
+            error: _onError // function to call if an error occurred
         });
     }
 }
 
 /**
- *
+ * Performs a call using the HTTP GET method
  */
-function callRESTFulGet(apiName, parameters, errorCallback, successCallback, cache)
+function callRESTFulGet(remoteWSAlias, parameters, errorCallback, successCallback, cache)
 {
-    _callRESTFul(apiName, parameters, HTTP_GET_METHOD, errorCallback, successCallback, cache);
+    _callRESTFul(remoteWSAlias, parameters, HTTP_GET_METHOD, errorCallback, successCallback, cache);
 }
 
 /**
- *
+ * Performs a call using the HTTP POST method
  */
-function callRESTFulPost(apiName, parameters, errorCallback, successCallback, cache)
+function callRESTFulPost(remoteWSAlias, parameters, errorCallback, successCallback, cache)
 {
-    _callRESTFul(apiName, parameters, HTTP_POST_METHOD, errorCallback, successCallback, cache);
+    _callRESTFul(remoteWSAlias, parameters, HTTP_POST_METHOD, errorCallback, successCallback, cache);
 }
 
 /**
- *
+ * Checks if the response is a success
  */
 function isSuccess(response)
 {
@@ -141,7 +173,7 @@ function isSuccess(response)
 }
 
 /**
- *
+ * Checks if the response is an error
  */
 function isError(response)
 {
@@ -149,7 +181,7 @@ function isError(response)
 }
 
 /**
- *
+ * Checks if the response has data
  */
 function hasData(response)
 {

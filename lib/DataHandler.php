@@ -4,24 +4,28 @@ namespace ClientAddon;
 
 require_once APPLICATION_PATH.'/lib/SessionHandler.php';
 
+/**
+ * Manages the persistent data of a user
+ * Handles errors and success
+ */
 class DataHandler
 {
-	//
+	// Properties of a returned value
 	const CODE = 'code';
 	const RESPONSE = 'response';
 
-	//
+	// Session parameters
 	const SESSION_ID = 'sessionId';
 	const SESSION_NAME = 'data';
 
 	/**
-	 *
+	 * Checks if the parameter is a success
 	 */
 	public static function isSuccess($response)
 	{
 		$isSuccess = false;
 
-		if (is_object($response) && isset($response->error) && $response->error === FHC_CORE_SUCCESS)
+		if (is_object($response) && isset($response->error) && $response->error == FHC_CORE_SUCCESS)
         {
             $isSuccess = true;
         }
@@ -30,7 +34,7 @@ class DataHandler
 	}
 
 	/**
-	 *
+	 * Checks if the parameter is an error
 	 */
 	public static function isError($response)
 	{
@@ -38,7 +42,7 @@ class DataHandler
 	}
 
 	/**
-	 *
+	 * Checks if the parameter is a success and contains data
 	 */
 	public static function hasData($response)
 	{
@@ -59,7 +63,7 @@ class DataHandler
 	}
 
 	/**
-	 *
+	 * Generate a success whith the given parameter (optional)
 	 */
 	public static function success($response = null)
 	{
@@ -67,7 +71,7 @@ class DataHandler
 	}
 
 	/**
-	 *
+	 * Generate an error whith the given parameter (optional) and code (required)
 	 */
 	public static function error($code, $response = null)
 	{
@@ -75,7 +79,7 @@ class DataHandler
 	}
 
 	/**
-	 *
+	 * Initialize data session
 	 */
 	public static function startSession()
 	{
@@ -85,7 +89,7 @@ class DataHandler
 	}
 
 	/**
-	 *
+	 * Adds data for this user identified by the parameter name
 	 */
 	public static function set($name, $value)
 	{
@@ -93,7 +97,7 @@ class DataHandler
 	}
 
 	/**
-	 *
+	 * Gets data for this user identified by the parameter name
 	 */
 	public static function get($name)
 	{
@@ -101,7 +105,8 @@ class DataHandler
 	}
 
 	/**
-	 *
+	 * Returns an object that can be used managed with the methods of this class
+	 * to communicate between methods and functions
 	 */
 	private static function _getReturnObject($code, $response = null)
 	{
