@@ -17,6 +17,7 @@ define('MISSING_REQUIRED_PARAMETERS',	'ERR0007');
 // Non blocking errors (warnings)
 define('NO_DATA',               		'WAR0001');
 define('LOGIN_REQUIRED',				'WAR0002');
+define('WRONG_HOOK',					'WAR0003');
 
 // Connection parameters names
 define('USERNAME',			'username');

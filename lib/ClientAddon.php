@@ -575,10 +575,19 @@ class ClientAddon
 	{
 		$callHook = null;
 
-		if ((is_string($this->_hook) && function_exists($this->_hook))
-			|| ($this->_hook != null && is_callable($this->_hook)))
+		// If a hook was configurated in the config file for this call
+		if ($this->_hook != null)
 		{
-			$callHook = call_user_func($this->_hook, $code, $response);
+			// If the hook name is a non empty string and it's a valid name of a callable function
+			if(is_string($this->_hook) && trim($this->_hook) != ''
+				&& function_exists($this->_hook) && is_callable($this->_hook))
+			{
+				$callHook = call_user_func($this->_hook, $code, $response); // call it!!
+			}
+			else // if it was configurated a wrong hook raise an error
+			{
+				$callHook = ClientAddon\DataHandler::error(WRONG_HOOK);
+			}
 		}
 
 		return $callHook;
