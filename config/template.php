@@ -25,20 +25,18 @@ $connection = array(
 // OR an array having:
 //	- as element REMOTE_WS the <path/name/method to call> of the remote web service (REQUIRED)
 //	- as element HOOK the hook to manipulate the response from the remote web service (OPTIONAL)
-//	- as element LOGIN_REQUIRED a boolean: if true (default) to perform this call the user must be logged in (OPTIONAL)
+//	- as element AUTH a boolean: if true (default) to perform this call the user must be logged in (OPTIONAL)
 //
-// To use login capabilities must be present the element LOCAL_LOGIN_CALL in the first level, and in the array
-// of it must be present the element USERNAME
+// To use login capabilities must be present the element LOCAL_LOGIN_CALL in the first level
 $route = array(
-	LOCAL_LOGIN_CALL => array(
-		REMOTE_WS => 'CheckUserAuth/CheckByUsernamePassword',
-		HOOK => 'hookLogin',
-		USERNAME => 'username'
+	LOCAL_LOGIN_CALL => array( // required if access functionalities are needed
+		REMOTE_WS => 'CheckUserAuth/CheckByUsernamePassword', // remote web service name (REQUIRED)
+		HOOK => 'hookLogin' // hook to call after the remote web service call (OPTIONAL)
 	),
-    'testHook'  => array(	//
-        REMOTE_WS => 'Test/Test', //
-        HOOK => 'hookTest', //
-		AUTH => false	//
+    'testHookNoLogin'  => array(
+        REMOTE_WS => 'Test/Test', // remote web service name (REQUIRED)
+        HOOK => 'hookTest', // hook to call after the remote web service call (OPTIONAL)
+		AUTH => false	// by default is true (OPTIONAL)
     ),
-	'testNoHook'  => 'Test/Test'
+	'testNoHook'  => 'Test/Test' // remote web service name (REQUIRED)
 );

@@ -36,12 +36,12 @@ $(document).ready(function() {
 		callRESTFulPost('saveKontaktByPersonID', {kontakt_id: 1}, errorCallback, successCallback);
 	});
 
-	$("#testNoHook").click(function() {
-		callRESTFulGet('testNoHook', null, errorCallback, successCallback, CACHE_ENABLED);
+	$("#testHookNoLogin").click(function() {
+		callRESTFulGet('testHookNoLogin', null, errorCallback, successCallback, CACHE_OVERWRITE);
 	});
 
-	$("#testHook").click(function() {
-		callRESTFulGet('testHook', null, errorCallback, successCallback, CACHE_OVERWRITE);
+	$("#testNoHook").click(function() {
+		callRESTFulGet('testNoHook', null, errorCallback, successCallback, CACHE_ENABLED);
 	});
 
 	$("#login").click(function() {

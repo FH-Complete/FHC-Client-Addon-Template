@@ -19,15 +19,14 @@ $connection = array(
 $route = array(
 	LOCAL_LOGIN_CALL => array(
 		REMOTE_WS => 'CheckUserAuth/CheckByUsernamePassword',
-		HOOK => 'hookLogin',
-		USERNAME => 'username'
+		HOOK => 'hookLogin'
 	),
-    'testHook' => array(
+	'testHookNoLogin'  => array(
         REMOTE_WS => 'Test/Test',
         HOOK => 'hookTest',
 		AUTH => false
     ),
-	'testNoHook' => 'Test/Test',
+	'testNoHook'  => 'Test/Test',
     'loadPersonData' => 'person/Person/Person',
 	'loadPhrases' => array(
         REMOTE_WS => 'system/Phrase/Phrases',

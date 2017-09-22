@@ -2,10 +2,7 @@
 
 namespace ClientAddon;
 
-require_once APPLICATION_PATH.'/lib/SessionHandler.php';
-
 /**
- * Manages the persistent data of a user
  * Handles errors and success
  */
 class DataHandler
@@ -13,10 +10,6 @@ class DataHandler
 	// Properties of a returned value
 	const CODE = 'code';
 	const RESPONSE = 'response';
-
-	// Session parameters
-	const SESSION_ID = 'sessionId';
-	const SESSION_NAME = 'data';
 
 	/**
 	 * Checks if the parameter is a success
@@ -42,7 +35,7 @@ class DataHandler
 	}
 
 	/**
-	 * Checks if the parameter is a success and contains data
+	 * IF $response == success && contains data THEN true, ELSE false
 	 */
 	public static function hasData($response)
 	{
@@ -76,32 +69,6 @@ class DataHandler
 	public static function error($code, $response = null)
 	{
 		return DataHandler::_getReturnObject($code, $response);
-	}
-
-	/**
-	 * Initialize data session
-	 */
-	public static function startSession()
-	{
-		SessionHandler::start();
-
-		SessionHandler::set(DataHandler::SESSION_NAME, DataHandler::SESSION_ID, session_id());
-	}
-
-	/**
-	 * Adds data for this user identified by the parameter name
-	 */
-	public static function set($name, $value)
-	{
-		SessionHandler::set(DataHandler::SESSION_NAME, $name, $value);
-	}
-
-	/**
-	 * Gets data for this user identified by the parameter name
-	 */
-	public static function get($name)
-	{
-		return SessionHandler::get(DataHandler::SESSION_NAME, $name);
 	}
 
 	/**

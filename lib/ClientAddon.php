@@ -2,8 +2,8 @@
 
 require_once APPLICATION_PATH.'/vendor/autoload.php';
 require_once APPLICATION_PATH.'/lib/constants.php';
-require_once APPLICATION_PATH.'/lib/DataHandler.php';
 require_once APPLICATION_PATH.'/lib/CacheHandler.php';
+require_once APPLICATION_PATH.'/lib/DataHandler.php';
 
 /**
  * Manages the communications between the web interface of the user and the FHC core
@@ -60,7 +60,6 @@ class ClientAddon
     /**
      * Performs a call to a remote web service
 	 * - Loads all the hooks
-	 * - Initialize data session
 	 * - Initialize cache
 	 * - Checks the parameters from $_GET or $_POST
 	 * - Checks if the user should be logged before calling the remote web service
@@ -82,7 +81,6 @@ class ClientAddon
 
 		$this->_loadHooks(); // Loads all hooks files present in the hook directory
 
-		ClientAddon\DataHandler::startSession(); // Initialize data session
 		ClientAddon\CacheHandler::startSession(); // Initialize cache
 
 		// Checks if the required parameters are present and are valid
@@ -155,15 +153,10 @@ class ClientAddon
 			if ($response->{ClientAddon\DataHandler::CODE} == SUCCESS)
 			{
 				// If the cache is enabled or should be overwritten, store the result
+				// NOTE: if the called remote web service is LOCAL_LOGIN_CALL, then the cache is always enabled
 				if ($this->_cache == ClientAddon::CACHE_ENABLED || $this->_cache == ClientAddon::CACHE_OVERWRITE)
 				{
 					ClientAddon\CacheHandler::set($this->_remoteWSAlias, $response);
-				}
-
-				// If this is the login call...
-				if ($this->_remoteWSAlias == LOCAL_LOGIN_CALL)
-				{
-					$this->_setDataLogin($response); // ...stores login data in the data session
 				}
 			}
 		}
@@ -172,27 +165,11 @@ class ClientAddon
     }
 
 	/**
-	 * Stores login data (user data) into data session
-	 */
-	private function _setDataLogin($response)
-	{
-		if (isset($this->_routeArray[LOCAL_LOGIN_CALL])
-			&& isset($this->_routeArray[LOCAL_LOGIN_CALL][USERNAME])
-			&& isset($this->_callParametersArray[USERNAME]))
-		{
-			ClientAddon\DataHandler::set($this->_routeArray[LOCAL_LOGIN_CALL][USERNAME], $this->_callParametersArray[USERNAME]);
-		}
-	}
-
-	/**
-	 * Retrives login data (user data) from data session
+	 * Retrives login data from cache
 	 */
 	private function _getDataLogin()
 	{
-		if (isset($this->_routeArray[LOCAL_LOGIN_CALL]) && isset($this->_routeArray[LOCAL_LOGIN_CALL][USERNAME]))
-		{
-			return ClientAddon\DataHandler::get($this->_routeArray[LOCAL_LOGIN_CALL][USERNAME]);
-		}
+		return ClientAddon\CacheHandler::get(LOCAL_LOGIN_CALL);
 	}
 
 	/**
@@ -260,7 +237,7 @@ class ClientAddon
     /**
      * Parse the parameters given via HTTP GET or POST methods (present in $_GET and $_POST)
 	 * It stores parameters for the remote web service into _callParametersArray property.
-	 * The other given parameters are used to understand, using the configured route, what remote web service
+	 * The other given parameters are used to understand, using the configurated route, what remote web service
 	 * to call, optionally what hook to call after and if login is required in order to be able to call
 	 * this remote web service. Also used to set the cache mode.
      */
@@ -281,6 +258,7 @@ class ClientAddon
 			// If the parameter is the name of the remote web service
             if ($parameterName == REMOTE_WS)
             {
+				// If exists a configurated
                 if (array_key_exists($parameterValue, $this->_routeArray))
                 {
 					$this->_remoteWSAlias = $parameterValue; // store the called alias of the remote web service
@@ -315,7 +293,7 @@ class ClientAddon
 			// If the parameter is used to set the cache mode
             elseif ($parameterName == ClientAddon::CACHE_PARAMETER)
             {
-				$this->_cache = ClientAddon::CACHE_DISABLED; // By default caching is not enabled
+				$this->_cache = ClientAddon::CACHE_ENABLED; // By default caching is enabled
 				// If it contains a valid value then set the property
 				if ($parameterValue == ClientAddon::CACHE_ENABLED
 					|| $parameterValue == ClientAddon::CACHE_DISABLED
@@ -367,7 +345,7 @@ class ClientAddon
 	 * Checks if the login succeeded or not
 	 * - If this is a login remote call, no login is required and the cache is enabled
 	 * - If this call doesn't require to be logged in, then the login succeeded
-	 * - If login data are present in data session, then the login succeeded
+	 * - If login data are present cache, then the login succeeded
 	 */
 	private function _checkLogin()
 	{
@@ -386,7 +364,7 @@ class ClientAddon
 			$checkLogin = true; // it's a success
 		}
 
-		// If the data of the user are present in data session
+		// If login data of the user are present in cache
 		if ($this->_getDataLogin() != null)
 		{
 			$checkLogin = true; // it's a success
