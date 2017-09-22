@@ -37,11 +37,11 @@ $(document).ready(function() {
 	});
 
 	$("#testNoHook").click(function() {
-		callRESTFulGet('testNoHook', null, errorCallback, successCallback);
+		callRESTFulGet('testNoHook', null, errorCallback, successCallback, CACHE_ENABLED);
 	});
 
 	$("#testHook").click(function() {
-		callRESTFulGet('testHook', null, errorCallback, successCallback);
+		callRESTFulGet('testHook', null, errorCallback, successCallback, CACHE_OVERWRITE);
 	});
 
 	$("#login").click(function() {

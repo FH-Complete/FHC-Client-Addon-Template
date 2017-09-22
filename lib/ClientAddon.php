@@ -78,7 +78,7 @@ class ClientAddon
      */
     public function call()
     {
-		$call = ClientAddon\DataHandler::error(FHC_CORE_ERROR); // by default returns an error
+		$response = ClientAddon\DataHandler::error(FHC_CORE_ERROR); // by default returns an error
 
 		$this->_loadHooks(); // Loads all hooks files present in the hook directory
 
@@ -88,21 +88,25 @@ class ClientAddon
 		// Checks if the required parameters are present and are valid
 		if (!$this->_checkRequiredParameters())
 		{
-			$call = $this->_error(MISSING_REQUIRED_PARAMETERS);
+			$response = $this->_error(MISSING_REQUIRED_PARAMETERS);
 		}
 		// Checks if the login succeeded or not, if login is not required then is a success
 		elseif (!$this->_checkLogin())
 		{
-			$call = $this->_error(LOGIN_REQUIRED);
+			$response = $this->_error(LOGIN_REQUIRED);
 		}
 		else // otherwise perform the remote web service call
 		{
-			$response = null;
+			$foundInCache = false;
 
 			// If the cache is enabled try to search in the cache
 			if ($this->_cache == ClientAddon::CACHE_ENABLED)
 			{
 				$response = ClientAddon\CacheHandler::get($this->_remoteWSAlias);
+				if ($response != null)
+				{
+					$foundInCache = true;
+				}
 			}
 			else // otherwise clean the cache for this call
 			{
@@ -110,7 +114,7 @@ class ClientAddon
 			}
 
 			// If nothing was found in the cache then call the server
-			if ($response == null)
+			if ($foundInCache == false)
 			{
 		        $uri = $this->_generateURI(); // URI of the remote web service
 
@@ -127,46 +131,44 @@ class ClientAddon
 				}
 		        catch (\Httpful\Exception\ConnectionErrorException $cee) // connection error
 		        {
-					$call = $this->_error(CONNECTION_ERROR);
+					$response = $this->_error(CONNECTION_ERROR);
 		        }
 				// otherwise another error has occurred, most likely the result of the
 				// remote web service is not json so a parse error is raised
 		        catch (Exception $e)
 		        {
-					$call = $this->_error(JSON_PARSE_ERROR);
+					$response = $this->_error(JSON_PARSE_ERROR);
 		        }
 			}
 
-			// If data are not retrived from the cache
-			if ($this->_cache != ClientAddon::CACHE_ENABLED)
+			// If data are not retrived from the cache (if data are from cache they were already checked)
+			if ($foundInCache == false)
 			{
 				// Checks the response of the remote web service and handles possible errors
 				// Eventually here is also called a hook, so the data could have been manipulated
-				$call = $this->_checkResponse($response);
-			}
-			else // otherwise if data are from the cache
-			{
-				$call = $response;
+				$response = $this->_checkResponse($response);
 			}
 
 			// If no errors occurred
-			if ($call->{ClientAddon\DataHandler::CODE} == SUCCESS)
+			// NOTE: $response->{ClientAddon\DataHandler::CODE} must be present here,
+			//		because data are from cache OR because data are checked by _checkResponse
+			if ($response->{ClientAddon\DataHandler::CODE} == SUCCESS)
 			{
 				// If the cache is enabled or should be overwritten, store the result
 				if ($this->_cache == ClientAddon::CACHE_ENABLED || $this->_cache == ClientAddon::CACHE_OVERWRITE)
 				{
-					ClientAddon\CacheHandler::set($this->_remoteWSAlias, $call);
+					ClientAddon\CacheHandler::set($this->_remoteWSAlias, $response);
 				}
 
 				// If this is the login call...
 				if ($this->_remoteWSAlias == LOCAL_LOGIN_CALL)
 				{
-					$this->_setDataLogin($call); // ...stores login data in the data session
+					$this->_setDataLogin($response); // ...stores login data in the data session
 				}
 			}
 		}
 
-		$this->_callResult = $call; // stores manipulated data in property _callResult
+		$this->_callResult = $response; // stores manipulated data in property _callResult
     }
 
 	/**
