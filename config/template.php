@@ -30,7 +30,7 @@ $connection = array(
 // To use login capabilities must be present the element LOCAL_LOGIN_CALL in the first level
 $route = array(
 	LOCAL_LOGIN_CALL => array( // required if access functionalities are needed
-		REMOTE_WS => 'CheckUserAuth/CheckByUsernamePassword', // remote web service name (REQUIRED)
+		REMOTE_WS => 'CheckUserAuth/CheckUserAuth', // remote web service name (REQUIRED)
 		HOOK => 'hookLogin' // hook to call after the remote web service call (OPTIONAL)
 	),
     'testHookNoLogin'  => array(

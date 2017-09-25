@@ -18,7 +18,7 @@ $connection = array(
 
 $route = array(
 	LOCAL_LOGIN_CALL => array(
-		REMOTE_WS => 'CheckUserAuth/CheckByUsernamePassword',
+		REMOTE_WS => 'CheckUserAuth/CheckUserAuth',
 		HOOK => 'hookLogin'
 	),
 	'testHookNoLogin'  => array(
