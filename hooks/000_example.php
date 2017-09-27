@@ -5,8 +5,7 @@
  */
 function hookTest($code, $response)
 {
-	$str = '';
-
+	// Check the code returned from a remote call
 	switch ($code)
 	{
 		case SUCCESS:
@@ -33,23 +32,29 @@ function hookTest($code, $response)
 		case INCOMPLETE_RESPONSE:
 			$str = INCOMPLETE_RESPONSE;
 			break;
-		case MISSING_API_PARAMETER:
-			$str = MISSING_API_PARAMETER;
+		case MISSING_REQUIRED_PARAMETERS:
+			$str = MISSING_REQUIRED_PARAMETERS;
+			break;
+		default:
+			$str = ADDON_ERROR;
 	}
 
+	// Save a parameter in session
+	ClientAddon\CacheHandler::addSessionParam('hookTest', true);
+
+	// Checks if response is a success
 	if (ClientAddon\DataHandler::hasData($response))
 	{
-		$str .= ' and has data';
+		return ClientAddon\DataHandler::success($response->retval); // return a success
 	}
-
-	error_log($str);
-
-	if (ClientAddon\DataHandler::isSuccess($response))
+	// Check if response is a success and contains data
+	elseif (ClientAddon\DataHandler::isSuccess($response))
 	{
-		return ClientAddon\DataHandler::success($response->retval);
+		return ClientAddon\DataHandler::success($response->retval); // return a success
 	}
+	// Checks if response is an error
 	elseif (ClientAddon\DataHandler::isError($response))
 	{
-		return ClientAddon\DataHandler::error($code, $response);
+		return ClientAddon\DataHandler::error($code, $response); // return an error
 	}
 }

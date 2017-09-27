@@ -29,11 +29,11 @@ function successCallback(response)
 $(document).ready(function() {
 
 	$("#loadKontaktByPersonID").click(function() {
-		callRESTFulGet('loadKontaktByPersonID', {person_id: 1}, errorCallback, successCallback, CACHE_ENABLED);
+		callRESTFulGet('loadKontaktByPersonID', null, errorCallback, successCallback, CACHE_ENABLED);
 	});
 
 	$("#saveKontaktByPersonID").click(function() {
-		callRESTFulPost('saveKontaktByPersonID', {kontakt_id: 1}, errorCallback, successCallback);
+		callRESTFulPost('saveKontaktByPersonID', null, errorCallback, successCallback);
 	});
 
 	$("#testHookNoLogin").click(function() {
@@ -46,6 +46,10 @@ $(document).ready(function() {
 
 	$("#login").click(function() {
 		callRESTFulGet('login', {username: "admin", password: "1q2w3"}, errorCallback, successCallback);
+	});
+
+	$("#loadPersonData").click(function() {
+		callRESTFulGet('loadPersonData', null, errorCallback, successCallback);
 	});
 
 });

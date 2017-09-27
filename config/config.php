@@ -16,6 +16,8 @@ $connection = array(
 	)
 );
 
+$cacheEnabled = true;
+
 $route = array(
 	LOCAL_LOGIN_CALL => array(
 		REMOTE_WS => 'CheckUserAuth/CheckUserAuth',
@@ -27,17 +29,24 @@ $route = array(
 		AUTH => false
     ),
 	'testNoHook'  => 'Test/Test',
-    'loadPersonData' => 'person/Person/Person',
+	'loadPersonData' => array(
+		REMOTE_WS => 'person/Person/Person',
+		AUTH => true,
+		SESSION_PARAMS => array('person_id')
+	),
 	'loadPhrases' => array(
         REMOTE_WS => 'system/Phrase/Phrases',
 		AUTH => false
     ),
     'loadKontaktByPersonID' => array(
         REMOTE_WS => 'person/Kontakt/KontaktByPersonID',
-        HOOK => 'hookGetKontakt'
+        HOOK => 'hookGetKontakt',
+		SESSION_PARAMS => array('person_id')
     ),
     'saveKontaktByPersonID' => array(
         REMOTE_WS => 'person/Kontakt/Kontakt',
-        HOOK => 'hookSaveKontakt'
+        HOOK => 'hookSaveKontakt',
+		AUTH => false,
+		SESSION_PARAMS => array('kontakt_id')
     )
 );

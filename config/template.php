@@ -19,6 +19,8 @@ $connection = array(
 	)
 );
 
+$cacheEnabled = true; // to debug change it to false, it will always overwrite the cache
+
 // Example of route configuration
 // Every element of the first level is the alias of the remote web service
 // Every first element must contain a string with the <path/name/method to call> of the remote web service (REQUIRED)
@@ -38,5 +40,10 @@ $route = array(
         HOOK => 'hookTest', // hook to call after the remote web service call (OPTIONAL)
 		AUTH => false	// by default is true (OPTIONAL)
     ),
-	'testNoHook'  => 'Test/Test' // remote web service name (REQUIRED)
+	'testNoHook'  => 'Test/Test', // remote web service name (REQUIRED)
+	'loadPersonData' => array(
+		REMOTE_WS => 'person/Person/Person',
+		AUTH => true,
+		SESSION_PARAMS => array('person_id')
+	)
 );

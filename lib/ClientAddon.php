@@ -26,13 +26,15 @@ class ClientAddon
 
 	private $_routeArray;		// contains the routing configuration array
 	private $_connectionArray;	// contains the connection parameters configuration array
+	private $_cacheEnabled;		// contains the cacheEnabled configuration parameter
 
 	private $_remoteWSAlias;	// contains the called alias of the remote web service
 
-	private $_remoteWSName;		// contains the name of the remote web service to call
-	private $_hook;				// contains the name of the eventual hook to call
-	private $_loginRequired;	// true: the user must be logged to perform this call
-								// false: the user should not be logged to perform this call
+	private $_remoteWSName;			// contains the name of the remote web service to call
+	private $_hook;					// contains the name of the eventual hook to call
+	private $_loginRequired;		// true: the user must be logged to perform this call
+									// false: the user should not be logged to perform this call
+	private $_sessionParamsArray;	// contains the names of the session parameters to send to the server
 
 	private $_cache;				// contains the desired cache mode
 	private $_httpMethod;			// http method used to call this server
@@ -111,10 +113,20 @@ class ClientAddon
 				ClientAddon\CacheHandler::unset($this->_remoteWSAlias);
 			}
 
+			// If it was configurated to not have cache enabled. Usefull to debug
+			if ($this->_cacheEnabled == false)
+			{
+				$foundInCache = false;
+			}
+
 			// If nothing was found in the cache then call the server
 			if ($foundInCache == false)
 			{
-		        $uri = $this->_generateURI(); // URI of the remote web service
+				// NOTE: Placed before _generateURI to overwrite not allowed parameters from web interface
+				$this->_mergeSessionParameters();
+
+				// URI of the remote web service, placed here for an easy debug
+		        $uri = $this->_generateURI();
 
 		        try
 		        {
@@ -126,6 +138,10 @@ class ClientAddon
 		            {
 		                $response = $this->_callPOST($uri); // ...calls the remote web service with the HTTP GET method
 		            }
+
+					// Checks the response of the remote web service and handles possible errors
+					// Eventually here is also called a hook, so the data could have been manipulated
+					$response = $this->_checkResponse($response);
 				}
 		        catch (\Httpful\Exception\ConnectionErrorException $cee) // connection error
 		        {
@@ -139,15 +155,7 @@ class ClientAddon
 		        }
 			}
 
-			// If data are not retrived from the cache (if data are from cache they were already checked)
-			if ($foundInCache == false)
-			{
-				// Checks the response of the remote web service and handles possible errors
-				// Eventually here is also called a hook, so the data could have been manipulated
-				$response = $this->_checkResponse($response);
-			}
-
-			// If no errors occurred
+			// If _checkResponse has returned a success
 			// NOTE: $response->{ClientAddon\DataHandler::CODE} must be present here,
 			//		because data are from cache OR because data are checked by _checkResponse
 			if ($response->{ClientAddon\DataHandler::CODE} == SUCCESS)
@@ -165,14 +173,6 @@ class ClientAddon
     }
 
 	/**
-	 * Retrives login data from cache
-	 */
-	private function _getDataLogin()
-	{
-		return ClientAddon\CacheHandler::get(LOCAL_LOGIN_CALL);
-	}
-
-	/**
 	 * Set the header content type and print out in json format
 	 */
 	public function printResults()
@@ -186,18 +186,28 @@ class ClientAddon
     // Private methods
 
 	/**
+	 * Retrives login data from cache
+	 */
+	private function _getDataLogin()
+	{
+		return ClientAddon\CacheHandler::get(LOCAL_LOGIN_CALL);
+	}
+
+	/**
      * Initialization of the properties of this object
      */
 	private function _setPropertiesDefault()
 	{
 		$this->_routeArray = null;
 		$this->_connectionArray = null;
+		$this->_cacheEnabled = true;
 
 		$this->_remoteWSAlias = null;
 
 		$this->_remoteWSName = null;
 		$this->_hook = null;
 		$this->_loginRequired = true; // by default to perform a call the user must be logged in
+		$this->_sessionParamsArray = array();
 
 		$this->_cache = ClientAddon::CACHE_DISABLED; // by default caching is not enabled
 		$this->_httpMethod = null;
@@ -209,7 +219,10 @@ class ClientAddon
 	}
 
     /**
-     * Loads the config file present in the config directory and sets the properties _routeArray and _connectionArray
+     * Loads the config file present in the config directory and sets the properties:
+	 * - _routeArray
+	 * - _connectionArray
+	 * - _cacheEnabled
      */
     private function _loadConfig()
     {
@@ -217,6 +230,7 @@ class ClientAddon
 
 		$this->_routeArray = $route;
 		$this->_connectionArray = $connection[$activeConnection];
+		$this->_cacheEnabled = $cacheEnabled;
     }
 
     /**
@@ -277,10 +291,15 @@ class ClientAddon
                         {
                             $this->_hook = $routeConfigEntry[HOOK];
                         }
-						// If is set that the login is required for this call, store it into property _loginRequired
+						// If is set that login is required for this call, store it into property _loginRequired
 						if (isset($routeConfigEntry[AUTH]))
                         {
                             $this->_loginRequired = $routeConfigEntry[AUTH];
+                        }
+						// Store in property _sessionParamsArray the list of session parameters to send to the server
+						if (isset($routeConfigEntry[SESSION_PARAMS]) && is_array($routeConfigEntry[SESSION_PARAMS]))
+                        {
+							$this->_sessionParamsArray = $routeConfigEntry[SESSION_PARAMS];
                         }
                     }
 					// Otherwise it contains only the name of the remote web service
@@ -404,6 +423,42 @@ class ClientAddon
         return $uri;
     }
 
+	/**
+	 * If are defined session parameters to send to the server in route configuration,
+	 * then place them in the property _callParametersArray.
+	 * It also overwrite the not allowed parameters given by the web interface
+	 */
+	private function _mergeSessionParameters()
+	{
+		$dataLogin = null;
+		$sessionDataLogin = $this->_getDataLogin(); // get login data from cache
+
+		// If login data from cache exists
+		if ($sessionDataLogin != null
+			&& isset($sessionDataLogin->{ClientAddon\DataHandler::RESPONSE})
+			&& is_array($sessionDataLogin->{ClientAddon\DataHandler::RESPONSE})
+			&& count($sessionDataLogin->{ClientAddon\DataHandler::RESPONSE}) > 0)
+		{
+			// Get session parameters from login data
+			$dataLogin = $sessionDataLogin->{ClientAddon\DataHandler::RESPONSE}[0];
+		}
+
+		// Loops through the list of session parameters required for this call
+		foreach ($this->_sessionParamsArray as $key => $sessionParamName)
+		{
+			// If this parameter exists in the session parameters object
+			if (is_object($dataLogin) && property_exists($dataLogin, $sessionParamName))
+			{
+				// Save/overwrite it into the property _callParametersArray
+				$this->_callParametersArray[$sessionParamName] = $dataLogin->{$sessionParamName};
+			}
+			else
+			{
+				unset($this->_callParametersArray[$sessionParamName]);
+			}
+		}
+	}
+
     /**
      * Performs a remote call using the GET HTTP method
 	 * NOTE: parameters in a HTTP GET call are placed into the URI
@@ -425,9 +480,9 @@ class ClientAddon
         return \Httpful\Request::post($uri)
 			->authenticateWith($this->_connectionArray[USERNAME], $this->_connectionArray[PASSWORD])
 			->addHeader($this->_connectionArray[API_KEY_NAME], $this->_connectionArray[API_KEY_VALUE])
-            ->expectsJson() // parse from json
-            ->body($this->_callParametersArray) // post parameters
-            ->sendsJson() // encode into json
+            ->expectsJson() // parse response as json
+            ->body(json_encode($this->_callParametersArray)) // post parameters
+            ->sendsJson() // Content-Type JSON
             ->send();
     }
 

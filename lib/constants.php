@@ -37,3 +37,4 @@ define('LOCAL_LOGIN_CALL',	'login');
 define('REMOTE_WS',			'remote_ws');
 define('HOOK',				'hook');
 define('AUTH',				'auth');
+define('SESSION_PARAMS',	'session_params');
