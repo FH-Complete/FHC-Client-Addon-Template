@@ -132,31 +132,7 @@ class ClientAddon
 					// URI of the remote web service, placed here for an easy debug
 			        $uri = $this->_generateURI();
 
-			        try
-			        {
-			            if ($this->_isGET()) // if the call was performed using a HTTP GET...
-			            {
-			                $response = $this->_callGET($uri); // ...calls the remote web service with the HTTP GET method
-			            }
-			            else // else if the call was performed using a HTTP POST...
-			            {
-			                $response = $this->_callPOST($uri); // ...calls the remote web service with the HTTP GET method
-			            }
-
-						// Checks the response of the remote web service and handles possible errors
-						// Eventually here is also called a hook, so the data could have been manipulated
-						$response = $this->_checkResponse($response);
-					}
-			        catch (\Httpful\Exception\ConnectionErrorException $cee) // connection error
-			        {
-						$response = $this->_error(CONNECTION_ERROR);
-			        }
-					// otherwise another error has occurred, most likely the result of the
-					// remote web service is not json so a parse error is raised
-			        catch (Exception $e)
-			        {
-						$response = $this->_error(JSON_PARSE_ERROR);
-			        }
+			        $response = $this->_callRemoteWS($uri); // perform a remote ws call with the given uri
 				}
 			}
 
@@ -429,6 +405,42 @@ class ClientAddon
     }
 
 	/**
+	 * Performs a remote web service call with the given uri and returns the result after having checked it
+	 */
+	private function _callRemoteWS($uri)
+	{
+		$response = ClientAddon\DataHandler::error(FHC_CORE_ERROR); // by default returns an error
+
+		try
+		{
+			if ($this->_isGET()) // if the call was performed using a HTTP GET...
+			{
+				$response = $this->_callGET($uri); // ...calls the remote web service with the HTTP GET method
+			}
+			else // else if the call was performed using a HTTP POST...
+			{
+				$response = $this->_callPOST($uri); // ...calls the remote web service with the HTTP GET method
+			}
+
+			// Checks the response of the remote web service and handles possible errors
+			// Eventually here is also called a hook, so the data could have been manipulated
+			$response = $this->_checkResponse($response);
+		}
+		catch (\Httpful\Exception\ConnectionErrorException $cee) // connection error
+		{
+			$response = $this->_error(CONNECTION_ERROR);
+		}
+		// otherwise another error has occurred, most likely the result of the
+		// remote web service is not json so a parse error is raised
+		catch (Exception $e)
+		{
+			$response = $this->_error(JSON_PARSE_ERROR);
+		}
+
+		return $response;
+	}
+
+	/**
 	 * If are defined session parameters to send to the server in route configuration,
 	 * then place them in the property _callParametersArray.
 	 * Returns a MISSING_SESSION_PARAMETERS error if session parameters are not present
@@ -585,7 +597,14 @@ class ClientAddon
 
 		if ($result == null) // if no hook is present or if doesn't return a valid value
 		{
-			$result = ClientAddon\DataHandler::success($response->retval); // return a success
+			$tmpParameter = null;
+
+			if (is_object($response) && isset($response->retval))
+			{
+				$tmpParameter = $response->retval;
+			}
+
+			$result = ClientAddon\DataHandler::success($tmpParameter); // return a success
 		}
 
 		return $result;
