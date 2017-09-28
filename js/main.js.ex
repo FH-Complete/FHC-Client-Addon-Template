@@ -1,3 +1,5 @@
+// WARNING: this is only an example file, do not edit or copy
+
 // Example of a callback error function
 // NOTE: This is called when the ajax call had some problems
 function errorCallback(jqXHR, textStatus, errorThrown)
