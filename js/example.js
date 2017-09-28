@@ -11,10 +11,10 @@ function errorCallback(jqXHR, textStatus, errorThrown)
 //
 function successCallback(response)
 {
-	if (isSuccess(response))
+	if (ClientAddon.isSuccess(response))
 	{
 		console.log("Is a success");
-		if (hasData(response))
+		if (ClientAddon.hasData(response))
 		{
 			console.log("...and contains data");
 		}
@@ -29,27 +29,27 @@ function successCallback(response)
 $(document).ready(function() {
 
 	$("#loadKontaktByPersonID").click(function() {
-		callRESTFulGet('loadKontaktByPersonID', null, errorCallback, successCallback, CACHE_ENABLED);
+		ClientAddon.callRESTFulGet('loadKontaktByPersonID', null, errorCallback, successCallback, CACHE_ENABLED);
 	});
 
 	$("#saveKontaktByPersonID").click(function() {
-		callRESTFulPost('saveKontaktByPersonID', null, errorCallback, successCallback);
+		ClientAddon.callRESTFulPost('saveKontaktByPersonID', null, errorCallback, successCallback);
 	});
 
 	$("#testHookNoLogin").click(function() {
-		callRESTFulGet('testHookNoLogin', null, errorCallback, successCallback, CACHE_OVERWRITE);
+		ClientAddon.callRESTFulGet('testHookNoLogin', null, errorCallback, successCallback, CACHE_OVERWRITE);
 	});
 
 	$("#testNoHook").click(function() {
-		callRESTFulGet('testNoHook', null, errorCallback, successCallback, CACHE_ENABLED);
+		ClientAddon.callRESTFulGet('testNoHook', null, errorCallback, successCallback, CACHE_ENABLED);
 	});
 
 	$("#login").click(function() {
-		callRESTFulGet('login', {username: "admin", password: "1q2w3"}, errorCallback, successCallback);
+		ClientAddon.callRESTFulGet('login', {username: "admin", password: "1q2w3"}, errorCallback, successCallback);
 	});
 
 	$("#loadPersonData").click(function() {
-		callRESTFulGet('loadPersonData', null, errorCallback, successCallback);
+		ClientAddon.callRESTFulGet('loadPersonData', null, errorCallback, successCallback);
 	});
 
 });

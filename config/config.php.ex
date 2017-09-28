@@ -45,5 +45,10 @@ $route = array(
 		REMOTE_WS => 'person/Person/Person',
 		AUTH => true,
 		SESSION_PARAMS => array('person_id')
+	),
+	'savePersonData' => array(
+		REMOTE_WS => 'person/Person/Person',
+		AUTH => true,
+		SESSION_PARAMS => array('person_id')
 	)
 );
