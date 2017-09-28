@@ -13,6 +13,7 @@ define('NO_RESPONSE_BODY',    			'ERR0004');
 define('INCOMPLETE_RESPONSE',   		'ERR0005');
 define('UNAUTHORIZED',          		'ERR0006');
 define('MISSING_REQUIRED_PARAMETERS',	'ERR0007');
+define('MISSING_SESSION_PARAMETERS',	'ERR0008');
 
 // Non blocking errors (warnings)
 define('NO_DATA',               		'WAR0001');

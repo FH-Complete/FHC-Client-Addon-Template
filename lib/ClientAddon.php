@@ -113,7 +113,7 @@ class ClientAddon
 				ClientAddon\CacheHandler::unset($this->_remoteWSAlias);
 			}
 
-			// If it was configurated to not have cache enabled. Usefull to debug
+			// If it was configurated to always overwrite cache. Usefull to debug
 			if ($this->_cacheEnabled == false)
 			{
 				$foundInCache = false;
@@ -122,37 +122,42 @@ class ClientAddon
 			// If nothing was found in the cache then call the server
 			if ($foundInCache == false)
 			{
-				// NOTE: Placed before _generateURI to overwrite not allowed parameters from web interface
-				$this->_mergeSessionParameters();
+				// Merge session parameters into the list of call parameters
+				// If at least one session parameter is missing, then a MISSING_SESSION_PARAMETERS error is raised
+				$response = $this->_mergeSessionParameters();
 
-				// URI of the remote web service, placed here for an easy debug
-		        $uri = $this->_generateURI();
+				// If no errors occurred then proceed with the remote call
+				if ($response->{ClientAddon\DataHandler::CODE} == SUCCESS)
+				{
+					// URI of the remote web service, placed here for an easy debug
+			        $uri = $this->_generateURI();
 
-		        try
-		        {
-		            if ($this->_isGET()) // if the call was performed using a HTTP GET...
-		            {
-		                $response = $this->_callGET($uri); // ...calls the remote web service with the HTTP GET method
-		            }
-		            else // else if the call was performed using a HTTP POST...
-		            {
-		                $response = $this->_callPOST($uri); // ...calls the remote web service with the HTTP GET method
-		            }
+			        try
+			        {
+			            if ($this->_isGET()) // if the call was performed using a HTTP GET...
+			            {
+			                $response = $this->_callGET($uri); // ...calls the remote web service with the HTTP GET method
+			            }
+			            else // else if the call was performed using a HTTP POST...
+			            {
+			                $response = $this->_callPOST($uri); // ...calls the remote web service with the HTTP GET method
+			            }
 
-					// Checks the response of the remote web service and handles possible errors
-					// Eventually here is also called a hook, so the data could have been manipulated
-					$response = $this->_checkResponse($response);
+						// Checks the response of the remote web service and handles possible errors
+						// Eventually here is also called a hook, so the data could have been manipulated
+						$response = $this->_checkResponse($response);
+					}
+			        catch (\Httpful\Exception\ConnectionErrorException $cee) // connection error
+			        {
+						$response = $this->_error(CONNECTION_ERROR);
+			        }
+					// otherwise another error has occurred, most likely the result of the
+					// remote web service is not json so a parse error is raised
+			        catch (Exception $e)
+			        {
+						$response = $this->_error(JSON_PARSE_ERROR);
+			        }
 				}
-		        catch (\Httpful\Exception\ConnectionErrorException $cee) // connection error
-		        {
-					$response = $this->_error(CONNECTION_ERROR);
-		        }
-				// otherwise another error has occurred, most likely the result of the
-				// remote web service is not json so a parse error is raised
-		        catch (Exception $e)
-		        {
-					$response = $this->_error(JSON_PARSE_ERROR);
-		        }
 			}
 
 			// If _checkResponse has returned a success
@@ -426,10 +431,12 @@ class ClientAddon
 	/**
 	 * If are defined session parameters to send to the server in route configuration,
 	 * then place them in the property _callParametersArray.
-	 * It also overwrite the not allowed parameters given by the web interface
+	 * Returns a MISSING_SESSION_PARAMETERS error if session parameters are not present
 	 */
 	private function _mergeSessionParameters()
 	{
+		$mergeSessionParameters = $this->_success(); // by default is a success
+
 		$dataLogin = null;
 		$sessionDataLogin = $this->_getDataLogin(); // get login data from cache
 
@@ -443,7 +450,7 @@ class ClientAddon
 			$dataLogin = $sessionDataLogin->{ClientAddon\DataHandler::RESPONSE}[0];
 		}
 
-		// Loops through the list of session parameters required for this call
+		// Loops through the list of session parameters required for this call (from route configuration)
 		foreach ($this->_sessionParamsArray as $key => $sessionParamName)
 		{
 			// If this parameter exists in the session parameters object
@@ -454,9 +461,12 @@ class ClientAddon
 			}
 			else
 			{
-				unset($this->_callParametersArray[$sessionParamName]);
+				$mergeSessionParameters = $this->_error(MISSING_SESSION_PARAMETERS);
+				break;
 			}
 		}
+
+		return $mergeSessionParameters;
 	}
 
     /**
