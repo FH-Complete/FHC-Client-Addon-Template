@@ -50,7 +50,7 @@ class CacheHandler
 	 */
 	public static function flush()
 	{
-		SessionHandler::unset(CacheHandler::SESSION_NAME);
+		SessionHandler::flush(CacheHandler::SESSION_NAME);
 	}
 
 	/**

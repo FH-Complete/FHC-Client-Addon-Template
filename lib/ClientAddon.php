@@ -19,10 +19,7 @@ class ClientAddon
     const HTTP_POST_METHOD = 'POST'; // http post method name
 	const URI_TEMPLATE = '%s://%s/%s/%s/%s/'; // URI format
 
-	const CACHE_PARAMETER = 'cache'; // cache parameter name
-	const CACHE_ENABLED = 'enabled'; // cache enabled value
-	const CACHE_DISABLED = 'disabled'; // cache disabled value
-	const CACHE_OVERWRITE = 'overwrite'; // cache overwrite value
+	private $_debug;			// contains the debug configuration parameter
 
 	private $_routeArray;		// contains the routing configuration array
 	private $_connectionArray;	// contains the connection parameters configuration array
@@ -85,8 +82,14 @@ class ClientAddon
 
 		ClientAddon\CacheHandler::startSession(); // Initialize cache
 
+		// If a logout is required...
+		if ($this->_remoteWSAlias == LOCAL_LOGOUT_CALL)
+		{
+			ClientAddon\CacheHandler::flush(); // ...clear all data for this session
+			$response = $this->_success(); // and returns a success
+		}
 		// Checks if the required parameters are present and are valid
-		if (!$this->_checkRequiredParameters())
+		elseif (!$this->_checkRequiredParameters())
 		{
 			$response = $this->_error(MISSING_REQUIRED_PARAMETERS);
 		}
@@ -99,8 +102,14 @@ class ClientAddon
 		{
 			$foundInCache = false;
 
+			// If cache is still not set then set as enabled
+			if ($this->_cache == null)
+			{
+				$this->_cache = CACHE_ENABLED;
+			}
+
 			// If the cache is enabled try to search in the cache
-			if ($this->_cache == ClientAddon::CACHE_ENABLED)
+			if ($this->_cache == CACHE_ENABLED)
 			{
 				$response = ClientAddon\CacheHandler::get($this->_remoteWSAlias);
 				if ($response != null)
@@ -143,7 +152,7 @@ class ClientAddon
 			{
 				// If the cache is enabled or should be overwritten, store the result
 				// NOTE: if the called remote web service is LOCAL_LOGIN_CALL, then the cache is always enabled
-				if ($this->_cache == ClientAddon::CACHE_ENABLED || $this->_cache == ClientAddon::CACHE_OVERWRITE)
+				if ($this->_cache == CACHE_ENABLED || $this->_cache == CACHE_OVERWRITE)
 				{
 					ClientAddon\CacheHandler::set($this->_remoteWSAlias, $response);
 				}
@@ -158,6 +167,8 @@ class ClientAddon
 	 */
 	public function printResults()
 	{
+		$this->_printDebug(); // debug time!
+
 		header('Content-Type: application/json');
 
 		echo json_encode($this->_callResult); // encode the result of the remote web service to json
@@ -167,11 +178,24 @@ class ClientAddon
     // Private methods
 
 	/**
-	 * Retrives login data from cache
+	 * Method to log debug infos to the apache error log
 	 */
-	private function _getDataLogin()
+	private function _printDebug()
 	{
-		return ClientAddon\CacheHandler::get(LOCAL_LOGIN_CALL);
+		if ($this->_debug === true) // if debug is enabled in the configuration file
+		{
+			error_log("HTTP method: ".$this->_httpMethod);
+			error_log("Called alias: ".$this->_remoteWSAlias);
+			error_log("Called remote WS: ".$this->_remoteWSName);
+			error_log("Call parameters: ".json_encode($this->_callParametersArray));
+			error_log("Session parameters: ".json_encode($this->_sessionParamsArray));
+			error_log("Auth required: ".($this->_loginRequired ? 'true' : 'false'));
+			error_log("Cache mode: ".$this->_cache);
+			error_log("Cache permanent overwrite mode: ".(!$this->_cacheEnabled ? 'true' : 'false'));
+			error_log("Called hook: ".($this->_hook != null ? $this->_hook : "none"));
+			error_log("Remote WS response: ".json_encode($this->_callResult));
+			error_log("-----------------------------------------------------------------------------------------------------");
+		}
 	}
 
 	/**
@@ -179,6 +203,8 @@ class ClientAddon
      */
 	private function _setPropertiesDefault()
 	{
+		$this->_debug = false; // by default doesn't log debug infos
+
 		$this->_routeArray = null;
 		$this->_connectionArray = null;
 		$this->_cacheEnabled = true;
@@ -190,7 +216,7 @@ class ClientAddon
 		$this->_loginRequired = true; // by default to perform a call the user must be logged in
 		$this->_sessionParamsArray = array();
 
-		$this->_cache = ClientAddon::CACHE_DISABLED; // by default caching is not enabled
+		$this->_cache = null;
 		$this->_httpMethod = null;
 
 		$this->_callParametersArray = array();
@@ -209,9 +235,10 @@ class ClientAddon
     {
         require_once APPLICATION_PATH.'/'.ClientAddon::CONFIG_DIR.'/'.ClientAddon::CONFIG_FILENAME;
 
+		$this->_debug = $debug;
 		$this->_routeArray = $route;
-		$this->_connectionArray = $connection[$activeConnection];
 		$this->_cacheEnabled = $cacheEnabled;
+		$this->_connectionArray = $connection[$activeConnection];
     }
 
     /**
@@ -277,6 +304,11 @@ class ClientAddon
                         {
                             $this->_loginRequired = $routeConfigEntry[AUTH];
                         }
+						// If is set that login is required for this call, store it into property _loginRequired
+						if (isset($routeConfigEntry[CACHE_PARAMETER]))
+                        {
+                            $this->_cache = $routeConfigEntry[CACHE_PARAMETER];
+                        }
 						// Store in property _sessionParamsArray the list of session parameters to send to the server
 						if (isset($routeConfigEntry[SESSION_PARAMS]) && is_array($routeConfigEntry[SESSION_PARAMS]))
                         {
@@ -291,15 +323,20 @@ class ClientAddon
                 }
             }
 			// If the parameter is used to set the cache mode
-            elseif ($parameterName == ClientAddon::CACHE_PARAMETER)
+            elseif ($parameterName == CACHE_PARAMETER)
             {
-				$this->_cache = ClientAddon::CACHE_ENABLED; // By default caching is enabled
-				// If it contains a valid value then set the property
-				if ($parameterValue == ClientAddon::CACHE_ENABLED
-					|| $parameterValue == ClientAddon::CACHE_DISABLED
-					|| $parameterValue == ClientAddon::CACHE_OVERWRITE)
+				// If cache is still not set, therfore if eventually the cache is set in the config file
+				// then its value is not overwritten
+				if ($this->_cache == null)
 				{
-					$this->_cache = $parameterValue;
+					$this->_cache = CACHE_ENABLED; // By default caching is enabled
+					// If it contains a valid value then set the property
+					if ($parameterValue == CACHE_ENABLED
+						|| $parameterValue == CACHE_DISABLED
+						|| $parameterValue == CACHE_OVERWRITE)
+					{
+						$this->_cache = $parameterValue;
+					}
 				}
             }
 			// Otherwise is a parameter to give to the remote web service
@@ -354,7 +391,7 @@ class ClientAddon
 		// If this is a remote call to log in
 		if ($this->_remoteWSAlias == LOCAL_LOGIN_CALL)
 		{
-			$this->_cache = ClientAddon::CACHE_ENABLED; // store the result in the cache
+			$this->_cache = CACHE_ENABLED; // store the result in the cache
 			$this->_loginRequired = false; // no login is required to perform a login ;)
 		}
 
@@ -371,6 +408,14 @@ class ClientAddon
 		}
 
 		return $checkLogin;
+	}
+
+	/**
+	 * Retrives login data from cache
+	 */
+	private function _getDataLogin()
+	{
+		return ClientAddon\CacheHandler::get(LOCAL_LOGIN_CALL);
 	}
 
     /**

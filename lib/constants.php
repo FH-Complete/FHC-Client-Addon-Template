@@ -33,9 +33,16 @@ define('WS_PATH',			'ws_path');
 
 // Alias of the remote web service that manage the user login
 define('LOCAL_LOGIN_CALL',	'login');
+define('LOCAL_LOGOUT_CALL',	'logout');
 
 // Route parameters names
 define('REMOTE_WS',			'remote_ws');
 define('HOOK',				'hook');
 define('AUTH',				'auth');
 define('SESSION_PARAMS',	'session_params');
+
+// Cache parameters
+define('CACHE_PARAMETER',	'cache'); // cache parameter name
+define('CACHE_ENABLED',		'enabled'); // cache enabled value
+define('CACHE_DISABLED',	'disabled'); // cache disabled value
+define('CACHE_OVERWRITE',	'overwrite'); // cache overwrite value

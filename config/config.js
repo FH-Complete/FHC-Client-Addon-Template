@@ -1,3 +1,5 @@
+const DEBUG = true;
+
 const PROTOCOL = 'http';
 const HOST = 'debian.dev';
 const PROJECT = 'ClientAddonTemplate';

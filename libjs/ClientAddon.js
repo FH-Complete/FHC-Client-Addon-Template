@@ -23,7 +23,7 @@ const RESPONSE = "response";
 const HTTP_GET_METHOD = "GET";
 const HTTP_POST_METHOD = "POST";
 
-// Chache modes
+// Cache modes
 const CACHE_ENABLED = "enabled";
 const CACHE_DISABLED = "disabled";
 const CACHE_OVERWRITE = "overwrite";
@@ -34,6 +34,7 @@ const REMOTE_WS = "remote_ws";
 
 // Default name of the login call
 const LOGIN_CALL_NAME = "login";
+const LOGOUT_CALL_NAME = "logout";
 
 /**
  * Definition and initialization of object ClientAddon
@@ -113,9 +114,38 @@ var ClientAddon = {
 	},
 
 	/**
+	 * Method to print debug info after a web services has been called
+	 */
+	_printDebug: function(remoteWSAlias, parameters, response, errorThrown) {
+
+		if (DEBUG === true) // If global const DEBUG is true, but really true!
+		{
+			// Print info about called remote web service alias
+			console.log("Called alias: " + remoteWSAlias);
+			console.log("Call parameters:"); // parameters given to this call
+			console.log(parameters);
+
+			if (response != null) // if there is a response...
+			{
+				console.log("WS Response:");
+				console.log(response); // ...print it
+			}
+			if (errorThrown != null) // if there is a jQuery error...
+			{
+				console.log("jQuery error:");
+				console.log(errorThrown); // ...print it
+			}
+			console.log("--------------------------------------------------------------------------------------------");
+		}
+	},
+
+	/**
 	 * Method to call if the ajax call has succeeded
 	 */
 	_onSuccess: function(response, textStatus, jqXHR) {
+
+		ClientAddon._printDebug(this._remoteWSAlias, this._data, response); // debug time!
+
 		// Call the success callback saved in _successCallback property
 		// NOTE: this is not referred to ClientAddon but to the ajax object
 		this._successCallback(response);
@@ -125,6 +155,9 @@ var ClientAddon = {
 	 * Method to call if the ajax call has raised an error
 	 */
 	_onError: function(jqXHR, textStatus, errorThrown) {
+
+		ClientAddon._printDebug(this._remoteWSAlias, this._data, null, errorThrown); // debug time!
+
 		 // Call the error callback saved in _errorCallback property
 		 // NOTE: this is not referred to ClientAddon but to the ajax object
 	    this._errorCallback(jqXHR, textStatus, errorThrown);
@@ -200,6 +233,8 @@ var ClientAddon = {
 	            type: type,
 	            dataType: "json", // always json!
 	            data: data,
+				_data: data,
+				_remoteWSAlias: remoteWSAlias, // store the alias of the core web service to call as a property of this object
 				_errorCallback: errorCallback, // save as property the callback error
 	            _successCallback: successCallback, // save as property the callback success
 	            success: ClientAddon._onSuccess, // function to call if succeeded

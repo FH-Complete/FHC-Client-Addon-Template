@@ -1,55 +1,131 @@
-//
-function errorCallback(jqXHR, textStatus, errorThrown)
+/**
+ *
+ */
+function genericErrorCallback(jqXHR, textStatus, errorThrown)
 {
-	console.error("A blocking error occurred");
-
-	console.error(jqXHR);
-	console.error(textStatus);
-	console.error(errorThrown);
+	alert("A gereric error has occurred. Contanct the administrator or try later: " + this._remoteWSAlias);
 }
 
-//
-function successCallback(response)
+/**
+ *
+ */
+function loginSuccess(response)
 {
-	if (ClientAddon.isSuccess(response))
+	if (ClientAddon.hasData(response))
 	{
-		console.log("Is a success");
-		if (ClientAddon.hasData(response))
-		{
-			console.log("...and contains data");
-		}
+		window.location.replace(PROTOCOL + "://" + HOST + "/" + PROJECT + "/" + "aufnahmeStg.html");
 	}
 	else
 	{
-		console.log("A non blocking error occurred: " + response.code);
+		alert("Username and password are not valid!");
 	}
 }
 
-//
-$(document).ready(function() {
+/**
+ *
+ */
+function logoutSuccess(response)
+{
+	alert("wait!!!");
+	window.location.replace(PROTOCOL + "://" + HOST + "/" + PROJECT + "/" + "aufnahmeLogin.html");
+}
 
-	$("#loadKontaktByPersonID").click(function() {
-		ClientAddon.callRESTFulGet('loadKontaktByPersonID', null, errorCallback, successCallback, CACHE_ENABLED);
-	});
+/**
+ *
+ */
+function checkLoginSuccessLogin(response)
+{
+	if (ClientAddon.hasData(response))
+	{
+		window.location.replace(PROTOCOL + "://" + HOST + "/" + PROJECT + "/" + "aufnahmeStg.html");
+	}
+}
 
-	$("#saveKontaktByPersonID").click(function() {
-		ClientAddon.callRESTFulPost('saveKontaktByPersonID', null, errorCallback, successCallback);
-	});
+/**
+ *
+ */
+function checkLoginSuccessStg(response)
+{
+	if (!ClientAddon.hasData(response))
+	{
+		window.location.replace(PROTOCOL + "://" + HOST + "/" + PROJECT + "/" + "aufnahmeLogin.html");
+	}
+	else
+	{
+		loadPhrases(loadPhrasesSuccess);
+		loadPerson(loadPersonSuccess);
+	}
+}
 
-	$("#testHookNoLogin").click(function() {
-		ClientAddon.callRESTFulGet('testHookNoLogin', null, errorCallback, successCallback, CACHE_OVERWRITE);
-	});
+/**
+ *
+ */
+function callLogin()
+{
+	ClientAddon.callRESTFulGet(
+		LOGIN_CALL_NAME,
+		{
+			username: $("#username").val(),
+			password: $("#password").val()
+		},
+		genericErrorCallback,
+		loginSuccess
+	);
+}
 
-	$("#testNoHook").click(function() {
-		ClientAddon.callRESTFulGet('testNoHook', null, errorCallback, successCallback, CACHE_ENABLED);
-	});
+/**
+ *
+ */
+function callLogout()
+{
+	ClientAddon.callRESTFulGet(
+		LOGOUT_CALL_NAME,
+		null,
+		genericErrorCallback,
+		logoutSuccess
+	);
+}
 
-	$("#login").click(function() {
-		ClientAddon.callRESTFulGet('login', {username: "admin", password: "1q2w3"}, errorCallback, successCallback);
-	});
+/**
+ *
+ */
+function checkLogin(successCallBack)
+{
+	ClientAddon.callRESTFulGet(
+		"login",
+		null,
+		genericErrorCallback,
+		successCallBack
+	);
+}
 
-	$("#loadPersonData").click(function() {
-		ClientAddon.callRESTFulGet('loadPersonData', null, errorCallback, successCallback);
-	});
+/**
+ *
+ */
+function loadPhrases(successCallback)
+{
+	ClientAddon.callRESTFulGet(
+		"phrases",
+		{
+			app: "aufnahme",
+			sprache: "German",
+			blockTags: "no",
+			cache: CACHE_DISABLED
+		},
+		genericErrorCallback,
+		successCallback
+	);
+}
 
-});
+/**
+ *
+ */
+function loadPerson(successCallback)
+{
+	ClientAddon.callRESTFulGet(
+		"loadPerson",
+		null,
+		genericErrorCallback,
+		successCallback
+	);
+}
