@@ -31,5 +31,9 @@ $route = array(
 	"loadPerson" => array(
 		REMOTE_WS => 'person/Person/Person',
 		SESSION_PARAMS => array('person_id')
+	),
+	"savePerson" => array(
+		REMOTE_WS => 'person/Person/Person',
+		SESSION_PARAMS => array('person_id')
 	)
 );

@@ -29,6 +29,8 @@ function loadPersonSuccess(response)
 	{
 		var person = response.response[0];
 
+		$("#personalData").html("");
+
 		$("#personalData").append(
 			"<div>Person_id: " + person.person_id + "</div>"
 		);
@@ -51,5 +53,11 @@ $(document).ready(function() {
 	checkLogin(checkLoginSuccessStg);
 
 	$("#btnLogout").click(callLogout);
+
+	$("#btnLoadPersonData").click(function() {
+		loadPerson(loadPersonSuccess);
+	});
+
+	$("#btnSavePersonData").click(savePersonData);
 
 });

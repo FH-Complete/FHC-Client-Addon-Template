@@ -65,8 +65,8 @@ function callLogin()
 	ClientAddon.callRESTFulGet(
 		LOGIN_CALL_NAME,
 		{
-			username: $("#username").val(),
-			password: $("#password").val()
+			email: $("#username").val(),
+			code: $("#password").val()
 		},
 		genericErrorCallback,
 		loginSuccess
@@ -126,6 +126,27 @@ function loadPerson(successCallback)
 		"loadPerson",
 		null,
 		genericErrorCallback,
-		successCallback
+		successCallback,
+		CACHE_OVERWRITE
+	);
+}
+
+/**
+ *
+ */
+function savePersonData()
+{
+	ClientAddon.callRESTFulPost(
+		"savePerson",
+		{
+			nachname: $("#nachname").val(),
+			vorname: $("#vorname").val(),
+			aktiv: true,
+			geschlecht: "u"
+		},
+		genericErrorCallback,
+		function() {
+			alert("Saved!!!");
+		}
 	);
 }

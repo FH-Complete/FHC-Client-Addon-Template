@@ -17,10 +17,32 @@
     <body>
 		<div>Some phrases</div>
         <div id="phrases"></div>
-		<br>
-		<div>Personal data</div>
-		<div id="personalData"></div>
-		<br>
+		<table>
+			<tr>
+				<td>
+					<div>Personal data</div>
+					<div id="personalData"></div>
+				</td>
+				<td>
+					<input id="btnLoadPersonData" type="button" name="loadPersonData" value="Load personal data">
+				</td>
+			</tr>
+		</table>
+		<table>
+			<tr>
+				<td>
+					<div>
+						Nachname: <input type="text" name="nachname" id="nachname" value="">
+					</div>
+					<div>
+						Vorname: <input type="text" name="vorname" id="vorname" value="">
+					</div>
+				</td>
+				<td>
+					<input id="btnSavePersonData" type="button" name="savePersonData" value="Save personal data">
+				</td>
+			</tr>
+		</table>
 		<div>
 			<input id="btnLogout" type="button" name="logout" value="Logout">
 		</div>

@@ -246,11 +246,11 @@ class ClientAddon
      */
     private function _setHTTPMethod()
     {
-        if (isset($_GET) && count($_GET) > 0) //
+        if ($_SERVER['REQUEST_METHOD'] == ClientAddon::HTTP_GET_METHOD)
         {
             $this->_httpMethod = ClientAddon::HTTP_GET_METHOD;
         }
-        elseif (isset($_POST) && count($_POST) > 0) //
+        elseif ($_SERVER['REQUEST_METHOD'] == ClientAddon::HTTP_POST_METHOD)
         {
             $this->_httpMethod = ClientAddon::HTTP_POST_METHOD;
         }
@@ -342,6 +342,16 @@ class ClientAddon
 			// Otherwise is a parameter to give to the remote web service
             else
             {
+				// Workaroud for boolean values
+				if (strcasecmp($parameterValue, 'true') == 0)
+				{
+					$parameterValue = true;
+				}
+				elseif (strcasecmp($parameterValue, 'false') == 0)
+				{
+					$parameterValue = false;
+				}
+
                 $this->_callParametersArray[$parameterName] = $parameterValue;
             }
         }
