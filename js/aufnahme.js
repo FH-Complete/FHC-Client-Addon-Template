@@ -26,7 +26,6 @@ function loginSuccess(response)
  */
 function logoutSuccess(response)
 {
-	alert("wait!!!");
 	window.location.replace(PROTOCOL + "://" + HOST + "/" + PROJECT + "/" + "aufnahmeLogin.html");
 }
 
@@ -128,6 +127,50 @@ function loadPerson(successCallback)
 		genericErrorCallback,
 		successCallback,
 		CACHE_OVERWRITE
+	);
+}
+
+/**
+ *
+ */
+function loadKontaktByPersonID()
+{
+	ClientAddon.callRESTFulGet(
+		"loadKontaktByPersonID",
+		null,
+		genericErrorCallback,
+		function(response) {
+			if (ClientAddon.hasData(response))
+			{
+				alert("PersonID: " + response.response[0].person_id + " - KontaktID: " + response.response[0].kontakt_id);
+			}
+			else
+			{
+				alert("No data loadKontaktByPersonID");
+			}
+		}
+	);
+}
+
+/**
+ *
+ */
+function loadKontaktByKontaktID()
+{
+	ClientAddon.callRESTFulGet(
+		"loadKontaktByKontaktID",
+		null,
+		genericErrorCallback,
+		function(response) {
+			if (ClientAddon.hasData(response))
+			{
+				alert("kontakt: " + response.response[0].kontakt);
+			}
+			else
+			{
+				alert("No data loadKontaktByKontaktID");
+			}
+		}
 	);
 }
 

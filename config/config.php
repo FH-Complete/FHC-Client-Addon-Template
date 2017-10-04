@@ -23,17 +23,26 @@ $cacheEnabled = true;
 $route = array(
 	LOCAL_LOGIN_CALL => 'CheckUserAuth/CheckUserAuth',
 	LOCAL_LOGOUT_CALL => LOCAL_LOGOUT_CALL,
-	"phrases" => array(
+	'phrases' => array(
 		REMOTE_WS => 'system/Phrase/Phrases',
 		AUTH => false,
 		CACHE_PARAMETER => CACHE_ENABLED
 	),
-	"loadPerson" => array(
+	'loadPerson' => array(
 		REMOTE_WS => 'person/Person/Person',
 		SESSION_PARAMS => array('person_id')
 	),
-	"savePerson" => array(
+	'savePerson' => array(
 		REMOTE_WS => 'person/Person/Person',
 		SESSION_PARAMS => array('person_id')
+	),
+	'loadKontaktByPersonID' => array(
+		REMOTE_WS => 'person/Kontakt/KontaktByPersonID',
+		HOOK => 'hookKontakt',
+		SESSION_PARAMS => array('person_id')
+	),
+	'loadKontaktByKontaktID' => array(
+		REMOTE_WS => 'person/Kontakt/Kontakt',
+		SESSION_PARAMS => array('kontakt_id')
 	)
 );

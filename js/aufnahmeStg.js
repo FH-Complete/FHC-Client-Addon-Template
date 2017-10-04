@@ -11,7 +11,7 @@ function loadPhrasesSuccess(response)
 				"<div>" + value.text + "</div>"
 			);
 
-			if (index == 3) return false;
+			if (index < 3) return false;
 		});
 	}
 	else
@@ -59,5 +59,9 @@ $(document).ready(function() {
 	});
 
 	$("#btnSavePersonData").click(savePersonData);
+
+	$("#btnLoadKontaktByPersonID").click(loadKontaktByPersonID);
+
+	$("#btnLoadKontaktByKontaktID").click(loadKontaktByKontaktID);
 
 });

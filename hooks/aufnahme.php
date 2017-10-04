@@ -1,49 +1,11 @@
 <?php
 
-function hookTest($code, $response)
+function hookKontakt($code, $response)
 {
-	if (ClientAddon\DataHandler::isSuccess($response))
+	if (ClientAddon\DataHandler::hasData($response))
 	{
-		return ClientAddon\DataHandler::success($response->retval);
-	}
-	elseif (ClientAddon\DataHandler::isError($response))
-	{
-		return ClientAddon\DataHandler::error($code, $response);
-	}
-}
+		ClientAddon\CacheHandler::addSessionParam('kontakt_id', $response->retval[0]->kontakt_id);
 
-function hookLogin($code, $response)
-{
-	if (ClientAddon\DataHandler::isSuccess($response))
-	{
 		return ClientAddon\DataHandler::success($response->retval);
-	}
-	elseif (ClientAddon\DataHandler::isError($response))
-	{
-		return ClientAddon\DataHandler::error($code, $response);
-	}
-}
-
-function hookGetKontakt($code, $response)
-{
-	if (ClientAddon\DataHandler::isSuccess($response))
-	{
-		return ClientAddon\DataHandler::success($response->retval);
-	}
-	elseif (ClientAddon\DataHandler::isError($response))
-	{
-		return ClientAddon\DataHandler::error($code, $response);
-	}
-}
-
-function hookSaveKontakt($code, $response)
-{
-	if (ClientAddon\DataHandler::isSuccess($response))
-	{
-		return ClientAddon\DataHandler::success($response->retval);
-	}
-	elseif (ClientAddon\DataHandler::isError($response))
-	{
-		return ClientAddon\DataHandler::error($code, $response);
 	}
 }

@@ -225,7 +225,7 @@ var ClientAddon = {
 	        var data = ClientAddon._cpObjProps(parameters); // copy the properties of parameters into a new object
 
 	        data[REMOTE_WS] = remoteWSAlias; // remote web service alias
-	        data[CACHE] = (cache != null && cache != '') ? cache : CACHE_DISABLED; // cache mode
+	        data[CACHE] = (cache != null && cache != '') ? cache : CACHE_ENABLED; // cache mode
 
 			// ajax call
 	        $.ajax({
