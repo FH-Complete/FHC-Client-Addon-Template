@@ -9,7 +9,7 @@ require_once APPLICATION_PATH.'/lib/DataHandler.php';
  * Manages the communications between the web interface of the user and the FHC core
  * Taking care of the session of the user
  */
-class ClientAddon
+class CoreClient
 {
     const HOOK_DIR = 'hooks'; // hooks directory name
     const CONFIG_DIR = 'config'; // config directory name
@@ -76,16 +76,16 @@ class ClientAddon
      */
     public function call()
     {
-		$response = ClientAddon\DataHandler::error(FHC_CORE_ERROR); // by default returns an error
+		$response = CoreClient\DataHandler::error(FHC_CORE_ERROR); // by default returns an error
 
 		$this->_loadHooks(); // Loads all hooks files present in the hook directory
 
-		ClientAddon\CacheHandler::startSession(); // Initialize cache
+		CoreClient\CacheHandler::startSession(); // Initialize cache
 
 		// If a logout is required...
 		if ($this->_remoteWSAlias == LOCAL_LOGOUT_CALL)
 		{
-			ClientAddon\CacheHandler::flush(); // ...clear all data for this session
+			CoreClient\CacheHandler::flush(); // ...clear all data for this session
 			$response = $this->_success(); // and returns a success
 		}
 		// Checks if the required parameters are present and are valid
@@ -111,7 +111,7 @@ class ClientAddon
 			// If the cache is enabled try to search in the cache
 			if ($this->_cache == CACHE_ENABLED)
 			{
-				$response = ClientAddon\CacheHandler::get($this->_remoteWSAlias);
+				$response = CoreClient\CacheHandler::get($this->_remoteWSAlias);
 				if ($response != null)
 				{
 					$foundInCache = true;
@@ -119,7 +119,7 @@ class ClientAddon
 			}
 			else // otherwise clean the cache for this call
 			{
-				ClientAddon\CacheHandler::unset($this->_remoteWSAlias);
+				CoreClient\CacheHandler::unset($this->_remoteWSAlias);
 			}
 
 			// If it was configurated to always overwrite cache. Usefull to debug
@@ -136,7 +136,7 @@ class ClientAddon
 				$response = $this->_mergeSessionParameters();
 
 				// If no errors occurred then proceed with the remote call
-				if ($response->{ClientAddon\DataHandler::CODE} == SUCCESS)
+				if ($response->{CoreClient\DataHandler::CODE} == SUCCESS)
 				{
 					// URI of the remote web service, placed here for an easy debug
 			        $uri = $this->_generateURI();
@@ -146,15 +146,15 @@ class ClientAddon
 			}
 
 			// If _checkResponse has returned a success
-			// NOTE: $response->{ClientAddon\DataHandler::CODE} must be present here,
+			// NOTE: $response->{CoreClient\DataHandler::CODE} must be present here,
 			//		because data are from cache OR because data are checked by _checkResponse
-			if ($response->{ClientAddon\DataHandler::CODE} == SUCCESS)
+			if ($response->{CoreClient\DataHandler::CODE} == SUCCESS)
 			{
 				// If the cache is enabled or should be overwritten, store the result
 				// NOTE: if the called remote web service is LOCAL_LOGIN_CALL, then the cache is always enabled
 				if ($this->_cache == CACHE_ENABLED || $this->_cache == CACHE_OVERWRITE)
 				{
-					ClientAddon\CacheHandler::set($this->_remoteWSAlias, $response);
+					CoreClient\CacheHandler::set($this->_remoteWSAlias, $response);
 				}
 			}
 		}
@@ -222,7 +222,7 @@ class ClientAddon
 		$this->_callParametersArray = array();
 
 		// The default result of the remote web service is an error
-		$this->_callResult = ClientAddon\DataHandler::error(ADDON_ERROR);
+		$this->_callResult = CoreClient\DataHandler::error(ADDON_ERROR);
 	}
 
     /**
@@ -233,7 +233,7 @@ class ClientAddon
      */
     private function _loadConfig()
     {
-        require_once APPLICATION_PATH.'/'.ClientAddon::CONFIG_DIR.'/'.ClientAddon::CONFIG_FILENAME;
+        require_once APPLICATION_PATH.'/'.CoreClient::CONFIG_DIR.'/'.CoreClient::CONFIG_FILENAME;
 
 		$this->_debug = $debug;
 		$this->_routeArray = $route;
@@ -246,13 +246,13 @@ class ClientAddon
      */
     private function _setHTTPMethod()
     {
-        if ($_SERVER['REQUEST_METHOD'] == ClientAddon::HTTP_GET_METHOD)
+        if ($_SERVER['REQUEST_METHOD'] == CoreClient::HTTP_GET_METHOD)
         {
-            $this->_httpMethod = ClientAddon::HTTP_GET_METHOD;
+            $this->_httpMethod = CoreClient::HTTP_GET_METHOD;
         }
-        elseif ($_SERVER['REQUEST_METHOD'] == ClientAddon::HTTP_POST_METHOD)
+        elseif ($_SERVER['REQUEST_METHOD'] == CoreClient::HTTP_POST_METHOD)
         {
-            $this->_httpMethod = ClientAddon::HTTP_POST_METHOD;
+            $this->_httpMethod = CoreClient::HTTP_POST_METHOD;
         }
     }
 
@@ -362,7 +362,7 @@ class ClientAddon
      */
     private function _isGET()
     {
-        return $this->_httpMethod == ClientAddon::HTTP_GET_METHOD;
+        return $this->_httpMethod == CoreClient::HTTP_GET_METHOD;
     }
 
     /**
@@ -370,7 +370,7 @@ class ClientAddon
      */
     private function _isPOST()
     {
-        return $this->_httpMethod == ClientAddon::HTTP_POST_METHOD;
+        return $this->_httpMethod == CoreClient::HTTP_POST_METHOD;
     }
 
 	/**
@@ -425,7 +425,7 @@ class ClientAddon
 	 */
 	private function _getDataLogin()
 	{
-		return ClientAddon\CacheHandler::get(LOCAL_LOGIN_CALL);
+		return CoreClient\CacheHandler::get(LOCAL_LOGIN_CALL);
 	}
 
     /**
@@ -434,7 +434,7 @@ class ClientAddon
     private function _generateURI()
     {
         $uri = sprintf(
-            ClientAddon::URI_TEMPLATE,
+            CoreClient::URI_TEMPLATE,
             $this->_connectionArray[PROTOCOL],
             $this->_connectionArray[HOST],
             $this->_connectionArray[PATH],
@@ -464,7 +464,7 @@ class ClientAddon
 	 */
 	private function _callRemoteWS($uri)
 	{
-		$response = ClientAddon\DataHandler::error(FHC_CORE_ERROR); // by default returns an error
+		$response = CoreClient\DataHandler::error(FHC_CORE_ERROR); // by default returns an error
 
 		try
 		{
@@ -509,12 +509,12 @@ class ClientAddon
 
 		// If login data from cache exists
 		if ($sessionDataLogin != null
-			&& isset($sessionDataLogin->{ClientAddon\DataHandler::RESPONSE})
-			&& is_array($sessionDataLogin->{ClientAddon\DataHandler::RESPONSE})
-			&& count($sessionDataLogin->{ClientAddon\DataHandler::RESPONSE}) > 0)
+			&& isset($sessionDataLogin->{CoreClient\DataHandler::RESPONSE})
+			&& is_array($sessionDataLogin->{CoreClient\DataHandler::RESPONSE})
+			&& count($sessionDataLogin->{CoreClient\DataHandler::RESPONSE}) > 0)
 		{
 			// Get session parameters from login data
-			$dataLogin = $sessionDataLogin->{ClientAddon\DataHandler::RESPONSE}[0];
+			$dataLogin = $sessionDataLogin->{CoreClient\DataHandler::RESPONSE}[0];
 		}
 
 		// Loops through the list of session parameters required for this call (from route configuration)
@@ -568,7 +568,7 @@ class ClientAddon
      */
     private function _loadHooks()
     {
-        if (($files = glob(APPLICATION_PATH.'/'.ClientAddon::HOOK_DIR.'/*.php')) != false)
+        if (($files = glob(APPLICATION_PATH.'/'.CoreClient::HOOK_DIR.'/*.php')) != false)
         {
             foreach ($files as $file)
             {
@@ -583,7 +583,7 @@ class ClientAddon
      */
     private function _checkResponse($response)
     {
-		$checkResponse = ClientAddon\DataHandler::error(ADDON_ERROR); // by default returns an error
+		$checkResponse = CoreClient\DataHandler::error(ADDON_ERROR); // by default returns an error
 
         if (is_object($response)) // must be an object returned by the json decode
         {
@@ -659,7 +659,7 @@ class ClientAddon
 				$tmpParameter = $response->retval;
 			}
 
-			$result = ClientAddon\DataHandler::success($tmpParameter); // return a success
+			$result = CoreClient\DataHandler::success($tmpParameter); // return a success
 		}
 
 		return $result;
@@ -676,7 +676,7 @@ class ClientAddon
 
 		if ($result == null) // if no hook is present or if doesn't return a valid value
 		{
-			$result = ClientAddon\DataHandler::error($code, $response); // return an error
+			$result = CoreClient\DataHandler::error($code, $response); // return an error
 		}
 
 		return $result;
@@ -703,7 +703,7 @@ class ClientAddon
 			}
 			else // if it was configurated a wrong hook raise an error
 			{
-				$callHook = ClientAddon\DataHandler::error(WRONG_HOOK);
+				$callHook = CoreClient\DataHandler::error(WRONG_HOOK);
 			}
 		}
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace ClientAddon;
+namespace CoreClient;
 
 require_once APPLICATION_PATH.'/lib/SessionHandler.php';
 

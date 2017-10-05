@@ -1,6 +1,6 @@
 <?php
 
-namespace ClientAddon;
+namespace CoreClient;
 
 /**
  * Manages the user session

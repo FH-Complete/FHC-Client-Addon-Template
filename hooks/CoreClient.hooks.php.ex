@@ -40,21 +40,21 @@ function hookTest($code, $response)
 	}
 
 	// Save a parameter in session
-	ClientAddon\CacheHandler::addSessionParam('hookTest', true);
+	CoreClient\CacheHandler::addSessionParam('hookTest', true);
 
 	// Checks if response is a success
-	if (ClientAddon\DataHandler::hasData($response))
+	if (CoreClient\DataHandler::hasData($response))
 	{
-		return ClientAddon\DataHandler::success($response->retval); // return a success
+		return CoreClient\DataHandler::success($response->retval); // return a success
 	}
 	// Check if response is a success and contains data
-	elseif (ClientAddon\DataHandler::isSuccess($response))
+	elseif (CoreClient\DataHandler::isSuccess($response))
 	{
-		return ClientAddon\DataHandler::success($response->retval); // return a success
+		return CoreClient\DataHandler::success($response->retval); // return a success
 	}
 	// Checks if response is an error
-	elseif (ClientAddon\DataHandler::isError($response))
+	elseif (CoreClient\DataHandler::isError($response))
 	{
-		return ClientAddon\DataHandler::error($code, $response); // return an error
+		return CoreClient\DataHandler::error($code, $response); // return an error
 	}
 }

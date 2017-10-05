@@ -6,6 +6,6 @@ const DEBUG = false;
 // Connection parameters
 const PROTOCOL = 'https'; // http or https
 const HOST = 'fhcomplete.org'; // host name
-const PROJECT = 'ClientAddonTemplate'; // project name
+const PROJECT = 'ClientTemplate'; // project name
 const PATH = 'controller'; // path to the router
 const ROUTER = 'router.php'; // router name

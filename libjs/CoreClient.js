@@ -37,9 +37,9 @@ const LOGIN_CALL_NAME = "login";
 const LOGOUT_CALL_NAME = "logout";
 
 /**
- * Definition and initialization of object ClientAddon
+ * Definition and initialization of object CoreClient
  */
-var ClientAddon = {
+var CoreClient = {
 	//------------------------------------------------------------------------------------------------------------------
 	// Public methods
 
@@ -49,7 +49,7 @@ var ClientAddon = {
 	 * errorCallback and successCallback are functions references
 	 */
 	callRESTFulGet: function(remoteWSAlias, parameters, errorCallback, successCallback, cache) {
-	    ClientAddon._callRESTFul(remoteWSAlias, parameters, HTTP_GET_METHOD, errorCallback, successCallback, cache);
+	    CoreClient._callRESTFul(remoteWSAlias, parameters, HTTP_GET_METHOD, errorCallback, successCallback, cache);
 	},
 
 	/**
@@ -58,7 +58,7 @@ var ClientAddon = {
 	 * errorCallback and successCallback are functions references
 	 */
 	callRESTFulPost: function(remoteWSAlias, parameters, errorCallback, successCallback, cache) {
-	    ClientAddon._callRESTFul(remoteWSAlias, parameters, HTTP_POST_METHOD, errorCallback, successCallback, cache);
+	    CoreClient._callRESTFul(remoteWSAlias, parameters, HTTP_POST_METHOD, errorCallback, successCallback, cache);
 	},
 
 	/**
@@ -82,7 +82,7 @@ var ClientAddon = {
 	 * Checks if the response is an error
 	 */
 	isError: function(response) {
-		return !ClientAddon.isSuccess(response);
+		return !CoreClient.isSuccess(response);
 	},
 
 	/**
@@ -91,7 +91,7 @@ var ClientAddon = {
 	hasData: function(response) {
 		var hasData = false;
 
-	    if (ClientAddon.isSuccess(response))
+	    if (CoreClient.isSuccess(response))
 	    {
 			if ((jQuery.type(response.response) == "object" && !jQuery.isEmptyObject(response.response))
 				|| (jQuery.isArray(response.response) && response.response.length > 0))
@@ -144,10 +144,10 @@ var ClientAddon = {
 	 */
 	_onSuccess: function(response, textStatus, jqXHR) {
 
-		ClientAddon._printDebug(this._remoteWSAlias, this._data, response); // debug time!
+		CoreClient._printDebug(this._remoteWSAlias, this._data, response); // debug time!
 
 		// Call the success callback saved in _successCallback property
-		// NOTE: this is not referred to ClientAddon but to the ajax object
+		// NOTE: this is not referred to CoreClient but to the ajax object
 		this._successCallback(response);
 	},
 
@@ -156,10 +156,10 @@ var ClientAddon = {
 	 */
 	_onError: function(jqXHR, textStatus, errorThrown) {
 
-		ClientAddon._printDebug(this._remoteWSAlias, this._data, null, errorThrown); // debug time!
+		CoreClient._printDebug(this._remoteWSAlias, this._data, null, errorThrown); // debug time!
 
 		 // Call the error callback saved in _errorCallback property
-		 // NOTE: this is not referred to ClientAddon but to the ajax object
+		 // NOTE: this is not referred to CoreClient but to the ajax object
 	    this._errorCallback(jqXHR, textStatus, errorThrown);
 	},
 
@@ -220,16 +220,28 @@ var ClientAddon = {
 	 */
 	_callRESTFul: function(remoteWSAlias, parameters, type, errorCallback, successCallback, cache) {
 		// Checks the given parameters if they are present and are valid
-	    if (ClientAddon._checkParameters(remoteWSAlias, parameters, errorCallback, successCallback))
+	    if (CoreClient._checkParameters(remoteWSAlias, parameters, errorCallback, successCallback))
 	    {
-	        var data = ClientAddon._cpObjProps(parameters); // copy the properties of parameters into a new object
+	        var data = CoreClient._cpObjProps(parameters); // copy the properties of parameters into a new object
 
 	        data[REMOTE_WS] = remoteWSAlias; // remote web service alias
-	        data[CACHE] = (cache != null && cache != '') ? cache : CACHE_ENABLED; // cache mode
+
+	        data[CACHE] = cache;
+			if (cache == null) // if no cache mode is given...
+			{
+				if (type == HTTP_GET_METHOD) // ...and a GET is performed...
+				{
+					data[CACHE] = CACHE_ENABLED; // ...set enabled by default
+				}
+				else if (type == HTTP_POST_METHOD) // ...else if a POST is performed...
+				{
+					data[CACHE] = CACHE_DISABLED; // ...set disabled by default
+				}
+			}
 
 			// ajax call
 	        $.ajax({
-	            url: ClientAddon._generateRouterURI(),
+	            url: CoreClient._generateRouterURI(),
 	            type: type,
 	            dataType: "json", // always json!
 	            data: data,
@@ -237,8 +249,8 @@ var ClientAddon = {
 				_remoteWSAlias: remoteWSAlias, // store the alias of the core web service to call as a property of this object
 				_errorCallback: errorCallback, // save as property the callback error
 	            _successCallback: successCallback, // save as property the callback success
-	            success: ClientAddon._onSuccess, // function to call if succeeded
-	            error: ClientAddon._onError // function to call if an error occurred
+	            success: CoreClient._onSuccess, // function to call if succeeded
+	            error: CoreClient._onError // function to call if an error occurred
 	        });
 	    }
 	}

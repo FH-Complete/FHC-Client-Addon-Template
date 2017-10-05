@@ -1,6 +1,6 @@
 <?php
 
-namespace ClientAddon;
+namespace CoreClient;
 
 /**
  * Handles errors and success
