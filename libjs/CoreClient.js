@@ -36,29 +36,37 @@ const REMOTE_WS = "remote_ws";
 const LOGIN_CALL_NAME = "login";
 const LOGOUT_CALL_NAME = "logout";
 
+// Default veil timeout
+const VEIL_TIMEOUT = 1000;
+
 /**
  * Definition and initialization of object CoreClient
  */
 var CoreClient = {
 	//------------------------------------------------------------------------------------------------------------------
+	// Properties
+
+	_veilCallersCounter: 0, // count the number of callers that want to activate the veil
+
+	//------------------------------------------------------------------------------------------------------------------
 	// Public methods
 
 	/**
 	 * Performs a call using the HTTP GET method
-	 * parameters is an object
-	 * errorCallback and successCallback are functions references
+	 * wsParameters is an object
+	 * callParameters is an object
 	 */
-	callRESTFulGet: function(remoteWSAlias, parameters, errorCallback, successCallback, cache) {
-	    CoreClient._callRESTFul(remoteWSAlias, parameters, HTTP_GET_METHOD, errorCallback, successCallback, cache);
+	callRESTFulGet: function(remoteWSAlias, wsParameters, callParameters) {
+	    CoreClient._callRESTFul(remoteWSAlias, wsParameters, HTTP_GET_METHOD, callParameters);
 	},
 
 	/**
 	 * Performs a call using the HTTP POST method
-	 * parameters is an object
-	 * errorCallback and successCallback are functions references
+	 * wsParameters is an object
+	 * callParameters is an object
 	 */
-	callRESTFulPost: function(remoteWSAlias, parameters, errorCallback, successCallback, cache) {
-	    CoreClient._callRESTFul(remoteWSAlias, parameters, HTTP_POST_METHOD, errorCallback, successCallback, cache);
+	callRESTFulPost: function(remoteWSAlias, wsParameters, callParameters) {
+	    CoreClient._callRESTFul(remoteWSAlias, wsParameters, HTTP_POST_METHOD, callParameters);
 	},
 
 	/**
@@ -103,6 +111,28 @@ var CoreClient = {
 		return hasData;
 	},
 
+	/**
+	 * Show a veil
+	 */
+	showVeil: function(veilTimeout) {
+		if (typeof veilTimeout == "number")
+		{
+			CoreClient._veilTimeout = veilTimeout;
+		}
+		else
+		{
+			CoreClient._veilTimeout = VEIL_TIMEOUT;
+		}
+		CoreClient._showVeil();
+	},
+
+	/**
+	 * Hide a veil that was shown before
+	 */
+	hideVeil: function() {
+		CoreClient._hideVeil();
+	},
+
 	//------------------------------------------------------------------------------------------------------------------
 	// Private methods
 
@@ -116,12 +146,12 @@ var CoreClient = {
 	/**
 	 * Method to print debug info after a web services has been called
 	 */
-	_printDebug: function(remoteWSAlias, parameters, response, errorThrown) {
+	_printDebug: function(parameters, response, errorThrown) {
 
 		if (DEBUG === true) // If global const DEBUG is true, but really true!
 		{
 			// Print info about called remote web service alias
-			console.log("Called alias: " + remoteWSAlias);
+			console.log("Called alias: " + parameters.remote_ws);
 			console.log("Call parameters:"); // parameters given to this call
 			console.log(parameters);
 
@@ -144,7 +174,7 @@ var CoreClient = {
 	 */
 	_onSuccess: function(response, textStatus, jqXHR) {
 
-		CoreClient._printDebug(this._remoteWSAlias, this._data, response); // debug time!
+		CoreClient._printDebug(this._data, response); // debug time!
 
 		// Call the success callback saved in _successCallback property
 		// NOTE: this is not referred to CoreClient but to the ajax object
@@ -156,7 +186,7 @@ var CoreClient = {
 	 */
 	_onError: function(jqXHR, textStatus, errorThrown) {
 
-		CoreClient._printDebug(this._remoteWSAlias, this._data, null, errorThrown); // debug time!
+		CoreClient._printDebug(this._data, null, errorThrown); // debug time!
 
 		 // Call the error callback saved in _errorCallback property
 		 // NOTE: this is not referred to CoreClient but to the ajax object
@@ -178,12 +208,52 @@ var CoreClient = {
 	},
 
 	/**
-	 * Checks call parameters, if they are present and are valid
-	 * NOTE: console.error is used here because those are not messages for the final user,
-	 * 		 but for the web interface developer
+	 * Method to show the veil
 	 */
-	_checkParameters: function(remoteWSAlias, parameters, errorCallback, successCallback) {
-	    var valid = true; // by default they are ok, we trust you!
+	_showVeil: function() {
+		if (CoreClient._veilCallersCounter == 0)
+		{
+			$("<div class=\"veil\"></div>").appendTo('body');
+		}
+
+		CoreClient._veilCallersCounter++;
+	},
+
+	/**
+	 * Method to hide the veil
+	 */
+	_hideVeil: function() {
+		window.setTimeout(function() {
+			if (CoreClient._veilCallersCounter >= 0)
+			{
+				if (CoreClient._veilCallersCounter > 0)
+				{
+					CoreClient._veilCallersCounter--;
+				}
+
+				if (CoreClient._veilCallersCounter == 0)
+				{
+					$(".veil").remove();
+				}
+			}
+		},
+		this._veilTimeout);
+	},
+
+	/**
+	 * Checks call parameters, if they are present and are valid
+	 * It generates and returns all the parameters needed to perform an ajax remote call
+	 * NOTE: console.error is used here because those are not messages for the final user,
+	 *		but for the web interface developer
+	 */
+	_checkAndGenerateAjaxParams: function(remoteWSAlias, wsParameters, type, callParameters) {
+	    var valid = true; // by default they are ok
+		// Returned parameters
+		var ajaxParameters = {
+			url: CoreClient._generateRouterURI(),
+			dataType: "json", // always json!
+			type: type // set HTTP method, GET or POST
+		};
 
 	    // remoteWSAlias must be a non empty string
 	    if (typeof remoteWSAlias != "string" || remoteWSAlias == "")
@@ -192,66 +262,139 @@ var CoreClient = {
 	        valid = false;
 	    }
 
-	    // parameters must be an object, not null of course
-	    if (typeof parameters != "object" && parameters != null)
+	    // wsParameters must be an object
+	    if (typeof wsParameters == "object")
 	    {
-			console.error("Invalid parameters, must be an object");
-	        valid = false;
+			var data = CoreClient._cpObjProps(wsParameters); // copy the properties of wsParameters into a new object
+			data[REMOTE_WS] = remoteWSAlias; // remote web service alias
+			// Stores them into ajaxParameters
+			// NOTE: property data is not possible to get later,
+			//		so the variable data is saved also in _data and it will be used later
+			ajaxParameters.data = data;
+			ajaxParameters._data = data;
 	    }
+		else
+		{
+			console.error("Invalid web service parameters, must be an object");
+			valid = false;
+		}
 
-	    // errorCallback and successCallback must be a function
-	    if (typeof errorCallback != "function" || typeof successCallback != "function")
+
+		// Checks if callParameters is an object
+	    if (typeof callParameters == "object")
 	    {
-	        console.error("Invalid callbacks, they must be functions");
-	        valid = false;
-	    }
-
-	    return valid;
-	},
-
-	/**
-	 * Performs a call to the server were the PHP layer is running
-	 * - remoteWSAlias: alias of the core web service to call
-	 * - parameters: parameters to give to the core web service
-	 * - type: POST or GET HTTP method
-	 * - errorCallback: function to call after an error has been raised
-	 * - successCallback: function to call after succeeded
-	 * - cache: desired cache mode (optional)
-	 */
-	_callRESTFul: function(remoteWSAlias, parameters, type, errorCallback, successCallback, cache) {
-		// Checks the given parameters if they are present and are valid
-	    if (CoreClient._checkParameters(remoteWSAlias, parameters, errorCallback, successCallback))
-	    {
-	        var data = CoreClient._cpObjProps(parameters); // copy the properties of parameters into a new object
-
-	        data[REMOTE_WS] = remoteWSAlias; // remote web service alias
-
-	        data[CACHE] = cache;
-			if (cache == null) // if no cache mode is given...
+			// If present, errorCallback must be a function
+		    if (callParameters.hasOwnProperty("errorCallback"))
 			{
-				if (type == HTTP_GET_METHOD) // ...and a GET is performed...
+				if (typeof callParameters.errorCallback == "function")
+				{
+					ajaxParameters._errorCallback = callParameters.errorCallback; // save as property the callback error
+					ajaxParameters.error = CoreClient._onError; // function to call if an error occurred
+				}
+				else
+				{
+					console.error("Invalid errorCallback, it must be a function");
+					valid = false;
+				}
+		    }
+
+			// If present, successCallback must be a function
+		    if (callParameters.hasOwnProperty("successCallback"))
+		    {
+				if (typeof callParameters.successCallback == "function")
+				{
+					ajaxParameters._successCallback = callParameters.successCallback; // save as property the callback success
+					ajaxParameters.success = CoreClient._onSuccess; // function to call if succeeded
+				}
+				else
+				{
+					console.error("Invalid successCallback, it must be a function");
+					valid = false;
+				}
+		    }
+
+			// If present, cache must be one this values
+		    if (callParameters.hasOwnProperty("cache"))
+			{
+				if (callParameters.cache != CACHE_ENABLED
+					&& callParameters.cache != CACHE_DISABLED
+					&& callParameters.cache != CACHE_OVERWRITE)
+			    {
+			        console.error("Invalid cache parameter, must be: CACHE_ENABLED, CACHE_DISABLED or CACHE_OVERWRITE");
+			        valid = false;
+			    }
+				else
+				{
+					data[CACHE] = callParameters.cache;
+				}
+			}
+			else // if not specified by default...
+			{
+				if (type == HTTP_GET_METHOD) // ...if GET is performed...
 				{
 					data[CACHE] = CACHE_ENABLED; // ...set enabled by default
 				}
-				else if (type == HTTP_POST_METHOD) // ...else if a POST is performed...
+				else if (type == HTTP_POST_METHOD) // ...if POST is performed...
 				{
 					data[CACHE] = CACHE_DISABLED; // ...set disabled by default
 				}
 			}
 
+			// If present, veilTimeout must be a number and cannot be less then 0 or greater then 60000
+		    if (callParameters.hasOwnProperty("veilTimeout") && typeof callParameters.veilTimeout == "number")
+		    {
+				if (callParameters.veilTimeout > 0 && callParameters.veilTimeout < 60000)
+				{
+					ajaxParameters._veilTimeout = callParameters.veilTimeout;
+					ajaxParameters.beforeSend = CoreClient._showVeil;
+					ajaxParameters.complete = CoreClient._hideVeil;
+				}
+				else if(callParameters.veilTimeout == 0)
+				{
+					// veil is disabled
+				}
+				else
+				{
+					console.error("Invalid veilTimeout parameter, must be a number >= 0 and <= 60000");
+					valid = false;
+				}
+		    }
+			else // is not present or the value is invalid
+			{
+				ajaxParameters._veilTimeout = VEIL_TIMEOUT;
+				ajaxParameters.beforeSend = CoreClient._showVeil;
+				ajaxParameters.complete = CoreClient._hideVeil;
+			}
+		}
+
+		if (valid === false)
+		{
+			ajaxParameters = null;
+		}
+
+	    return ajaxParameters;
+	},
+
+	/**
+	 * Performs a call to the server were the PHP layer is running
+	 * - remoteWSAlias: alias of the core web service to call
+	 * - wsParameters: parameters to give to the core web service
+	 * - type: POST or GET HTTP method
+	 * - callParameters is an object and could contains:
+	 *	- errorCallback: function to call after an error has been raised
+	 *	- successCallback: function to call after succeeded
+	 *	- cache: desired cache mode
+	 *	- veilTimeout: veil timeout
+	 */
+	_callRESTFul: function(remoteWSAlias, wsParameters, type, callParameters) {
+		// Retrives the parameters for the ajax call
+		var ajaxParameters = CoreClient._checkAndGenerateAjaxParams(remoteWSAlias, wsParameters, type, callParameters);
+
+		// Checks the given parameters if they are present and are valid
+	    if (ajaxParameters != null)
+	    {
 			// ajax call
-	        $.ajax({
-	            url: CoreClient._generateRouterURI(),
-	            type: type,
-	            dataType: "json", // always json!
-	            data: data,
-				_data: data,
-				_remoteWSAlias: remoteWSAlias, // store the alias of the core web service to call as a property of this object
-				_errorCallback: errorCallback, // save as property the callback error
-	            _successCallback: successCallback, // save as property the callback success
-	            success: CoreClient._onSuccess, // function to call if succeeded
-	            error: CoreClient._onError // function to call if an error occurred
-	        });
+	        $.ajax(ajaxParameters);
 	    }
 	}
 };
