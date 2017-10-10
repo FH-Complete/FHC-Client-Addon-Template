@@ -448,14 +448,24 @@ class CoreClient
 			$queryString = '';
 
 			// Create the query string
-			foreach ($this->_callParametersArray as $name => $value)
+			foreach ($this->_callParametersArray as $name => $value) // TODO if $value is an array?
 			{
-				$queryString .= ($queryString == '' ? '?' : '&').$name.'='.$value;
+				if (is_array($value)) // if is an array
+				{
+					foreach ($value as $key => $val)
+					{
+						$queryString .= ($queryString == '' ? '?' : '&').$name.'[]='.$val;
+					}
+				}
+				else // otherwise
+				{
+					$queryString .= ($queryString == '' ? '?' : '&').$name.'='.$value;
+				}
 			}
 
             $uri .= $queryString;
         }
-
+error_log($uri);
         return $uri;
     }
 
