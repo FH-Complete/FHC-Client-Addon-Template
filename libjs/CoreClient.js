@@ -36,9 +36,6 @@ const REMOTE_WS = "remote_ws";
 const LOGIN_CALL_NAME = "login";
 const LOGOUT_CALL_NAME = "logout";
 
-// Default veil timeout
-const VEIL_TIMEOUT = 1000;
-
 /**
  * Definition and initialization of object CoreClient
  */

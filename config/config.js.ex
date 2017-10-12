@@ -3,6 +3,9 @@
 // To see debug messages into the browser console set this parameter as true
 const DEBUG = false;
 
+// Default veil timeout (milliseconds)
+const VEIL_TIMEOUT = 1000;
+
 // Connection parameters
 const PROTOCOL = 'https'; // http or https
 const HOST = 'fhcomplete.org'; // host name
