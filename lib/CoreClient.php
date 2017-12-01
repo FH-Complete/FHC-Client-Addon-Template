@@ -465,7 +465,7 @@ class CoreClient
 
             $uri .= $queryString;
         }
-error_log($uri);
+
         return $uri;
     }
 
